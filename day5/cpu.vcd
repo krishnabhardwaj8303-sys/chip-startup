@@ -1,0 +1,185 @@
+$date
+	Mon Jul 27 18:46:01 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module cpu_tb $end
+$var wire 8 ! result [7:0] $end
+$var reg 1 " clk $end
+$var reg 8 # instruction [7:0] $end
+$var reg 1 $ rst $end
+$scope module uut $end
+$var wire 1 " clk $end
+$var wire 8 % instruction [7:0] $end
+$var wire 1 $ rst $end
+$var wire 8 & result [7:0] $end
+$var wire 3 ' reg_b [2:0] $end
+$var wire 3 ( reg_a [2:0] $end
+$var wire 2 ) opcode [1:0] $end
+$var wire 8 * data_b [7:0] $end
+$var wire 8 + data_a [7:0] $end
+$var wire 5 , alu_out [4:0] $end
+$var reg 3 - alu_op [2:0] $end
+$var reg 3 . wr_addr [2:0] $end
+$var reg 8 / wr_data [7:0] $end
+$var reg 1 0 wr_en $end
+$scope module ALU $end
+$var wire 4 1 a [3:0] $end
+$var wire 4 2 b [3:0] $end
+$var wire 3 3 op [2:0] $end
+$var parameter 3 4 ADD $end
+$var parameter 3 5 AND $end
+$var parameter 3 6 NOT $end
+$var parameter 3 7 OR $end
+$var parameter 3 8 SHL $end
+$var parameter 3 9 SHR $end
+$var parameter 3 : SUB $end
+$var parameter 3 ; XOR $end
+$var reg 5 < result [4:0] $end
+$var reg 1 = zero $end
+$upscope $end
+$scope module RF $end
+$var wire 1 " clk $end
+$var wire 3 > rd_addr1 [2:0] $end
+$var wire 3 ? rd_addr2 [2:0] $end
+$var wire 8 @ rd_data1 [7:0] $end
+$var wire 8 A rd_data2 [7:0] $end
+$var wire 1 $ rst $end
+$var wire 3 B wr_addr [2:0] $end
+$var wire 8 C wr_data [7:0] $end
+$var wire 1 0 wr_en $end
+$var integer 32 D i [31:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b100 ;
+b1 :
+b111 9
+b110 8
+b11 7
+b101 6
+b10 5
+b0 4
+$end
+#0
+$dumpvars
+b1000 D
+b0 C
+b0 B
+b0 A
+b0 @
+b0 ?
+b0 >
+1=
+b0 <
+b0 3
+b0 2
+b0 1
+10
+b0 /
+b0 .
+b0 -
+b0 ,
+b0 +
+b0 *
+b0 )
+b0 (
+b0 '
+b0 &
+b0 %
+1$
+b0 #
+0"
+b0 !
+$end
+#5
+b1000 D
+1"
+#10
+0"
+#15
+b1000 D
+1"
+#20
+0"
+0$
+#25
+1"
+#30
+b1 '
+b1 ?
+0"
+b1 #
+b1 %
+#35
+1"
+#40
+0"
+#45
+1"
+#50
+b10 .
+b10 B
+b10 -
+b10 3
+b10 )
+b10 (
+b10 >
+b11 '
+b11 ?
+0"
+b10010011 #
+b10010011 %
+#55
+1"
+#60
+0"
+#65
+1"
+#70
+b100 .
+b100 B
+b11 -
+b11 3
+b11 )
+b100 (
+b100 >
+b101 '
+b101 ?
+0"
+b11100101 #
+b11100101 %
+#75
+1"
+#80
+0"
+#85
+1"
+#90
+b110 .
+b110 B
+b1 -
+b1 3
+b1 )
+b110 (
+b110 >
+b111 '
+b111 ?
+0"
+b1110111 #
+b1110111 %
+#95
+1"
+#100
+0"
+#105
+1"
+#110
+0"
