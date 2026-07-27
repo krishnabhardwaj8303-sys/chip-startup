@@ -1,0 +1,419 @@
+$date
+	Mon Jul 27 18:49:14 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module cpu_final_tb $end
+$var wire 8 ! result [7:0] $end
+$var wire 3 " pc_out [2:0] $end
+$var reg 1 # clk $end
+$var reg 1 $ rst $end
+$var integer 32 % fail_count [31:0] $end
+$var integer 32 & pass_count [31:0] $end
+$scope module uut $end
+$var wire 1 # clk $end
+$var wire 1 $ rst $end
+$var wire 8 ' result [7:0] $end
+$var wire 3 ( reg_b [2:0] $end
+$var wire 3 ) reg_a [2:0] $end
+$var wire 3 * pc_out [2:0] $end
+$var wire 2 + opcode [1:0] $end
+$var wire 8 , instruction [7:0] $end
+$var wire 8 - data_b [7:0] $end
+$var wire 8 . data_a [7:0] $end
+$var wire 5 / alu_out [4:0] $end
+$var reg 3 0 alu_op [2:0] $end
+$scope module ALU $end
+$var wire 4 1 a [3:0] $end
+$var wire 4 2 b [3:0] $end
+$var wire 3 3 op [2:0] $end
+$var parameter 3 4 ADD $end
+$var parameter 3 5 AND $end
+$var parameter 3 6 NOT $end
+$var parameter 3 7 OR $end
+$var parameter 3 8 SHL $end
+$var parameter 3 9 SHR $end
+$var parameter 3 : SUB $end
+$var parameter 3 ; XOR $end
+$var reg 5 < result [4:0] $end
+$var reg 1 = zero $end
+$upscope $end
+$scope module IMEM $end
+$var wire 3 > addr [2:0] $end
+$var reg 8 ? instruction [7:0] $end
+$upscope $end
+$scope module PC $end
+$var wire 1 # clk $end
+$var wire 1 @ halt $end
+$var wire 1 $ rst $end
+$var reg 3 A pc_out [2:0] $end
+$upscope $end
+$scope module RF $end
+$var wire 1 # clk $end
+$var wire 3 B rd_addr1 [2:0] $end
+$var wire 3 C rd_addr2 [2:0] $end
+$var wire 8 D rd_data1 [7:0] $end
+$var wire 8 E rd_data2 [7:0] $end
+$var wire 1 $ rst $end
+$var wire 3 F wr_addr [2:0] $end
+$var wire 8 G wr_data [7:0] $end
+$var wire 1 H wr_en $end
+$var integer 32 I i [31:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b100 ;
+b1 :
+b111 9
+b110 8
+b11 7
+b101 6
+b10 5
+b0 4
+$end
+#0
+$dumpvars
+b1000 I
+1H
+b0 G
+b0 F
+b0 E
+b0 D
+b1 C
+b0 B
+b0 A
+0@
+b1 ?
+b0 >
+1=
+b0 <
+b0 3
+b0 2
+b0 1
+b0 0
+b0 /
+b0 .
+b0 -
+b1 ,
+b0 +
+b0 *
+b0 )
+b1 (
+b0 '
+b0 &
+b0 %
+1$
+0#
+b0 "
+b0 !
+$end
+#5
+b1000 I
+1#
+#10
+0#
+#15
+b1000 I
+1#
+#20
+0#
+#25
+b1000 I
+1#
+#30
+0#
+0$
+#35
+b11 (
+b11 C
+b10 )
+b10 B
+b10 F
+b10011 ,
+b10011 ?
+b1 "
+b1 *
+b1 >
+b1 A
+1#
+#40
+0#
+#45
+b1 0
+b1 3
+b10 (
+b10 C
+b0 )
+b0 B
+b0 F
+b1 +
+b1000010 ,
+b1000010 ?
+b10 "
+b10 *
+b10 >
+b10 A
+1#
+#50
+0#
+#55
+b10 0
+b10 3
+b11 (
+b11 C
+b1 )
+b1 B
+b1 F
+b10 +
+b10001011 ,
+b10001011 ?
+b11 "
+b11 *
+b11 >
+b11 A
+1#
+#60
+0#
+#65
+b11 0
+b11 3
+b1 (
+b1 C
+b0 )
+b0 B
+b0 F
+b11 +
+b11000001 ,
+b11000001 ?
+b100 "
+b100 *
+b100 >
+b100 A
+1#
+#70
+0#
+#75
+b0 0
+b0 3
+b101 (
+b101 C
+b100 )
+b100 B
+b100 F
+b0 +
+b100101 ,
+b100101 ?
+b101 "
+b101 *
+b101 >
+b101 A
+1#
+#80
+0#
+#85
+b1 0
+b1 3
+b111 (
+b111 C
+b110 )
+b110 B
+b110 F
+b1 +
+b1110111 ,
+b1110111 ?
+b110 "
+b110 *
+b110 >
+b110 A
+1#
+#90
+0#
+#95
+b10 0
+b10 3
+b1 (
+b1 C
+b0 )
+b0 B
+b0 F
+b10 +
+b10000001 ,
+b10000001 ?
+b111 "
+b111 *
+b111 >
+b111 A
+1#
+#100
+0#
+#105
+b0 0
+b0 3
+b0 +
+b1 ,
+b1 ?
+b0 "
+b0 *
+b0 >
+b0 A
+1#
+#110
+0#
+#115
+b11 (
+b11 C
+b10 )
+b10 B
+b10 F
+b10011 ,
+b10011 ?
+b1 "
+b1 *
+b1 >
+b1 A
+1#
+#120
+0#
+#125
+b1 0
+b1 3
+b10 (
+b10 C
+b0 )
+b0 B
+b0 F
+b1 +
+b1000010 ,
+b1000010 ?
+b10 "
+b10 *
+b10 >
+b10 A
+1#
+#130
+0#
+#135
+b10 0
+b10 3
+b11 (
+b11 C
+b1 )
+b1 B
+b1 F
+b10 +
+b10001011 ,
+b10001011 ?
+b11 "
+b11 *
+b11 >
+b11 A
+1#
+#140
+0#
+#145
+b11 0
+b11 3
+b1 (
+b1 C
+b0 )
+b0 B
+b0 F
+b11 +
+b11000001 ,
+b11000001 ?
+b100 "
+b100 *
+b100 >
+b100 A
+1#
+#150
+0#
+#155
+b0 0
+b0 3
+b101 (
+b101 C
+b100 )
+b100 B
+b100 F
+b0 +
+b100101 ,
+b100101 ?
+b101 "
+b101 *
+b101 >
+b101 A
+1#
+#160
+0#
+#165
+b1 0
+b1 3
+b111 (
+b111 C
+b110 )
+b110 B
+b110 F
+b1 +
+b1110111 ,
+b1110111 ?
+b110 "
+b110 *
+b110 >
+b110 A
+1#
+#170
+0#
+#175
+b10 0
+b10 3
+b1 (
+b1 C
+b0 )
+b0 B
+b0 F
+b10 +
+b10000001 ,
+b10000001 ?
+b111 "
+b111 *
+b111 >
+b111 A
+1#
+#180
+0#
+#185
+b0 0
+b0 3
+b0 +
+b1 ,
+b1 ?
+b0 "
+b0 *
+b0 >
+b0 A
+1#
+#190
+0#
+#195
+b11 (
+b11 C
+b10 )
+b10 B
+b10 F
+b10011 ,
+b10011 ?
+b1 "
+b1 *
+b1 >
+b1 A
+1#
+#200
+0#
