@@ -1,0 +1,198 @@
+$date
+	Mon Jul 27 13:37:44 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module traffic_light_tb $end
+$var wire 1 ! yellow $end
+$var wire 1 " red $end
+$var wire 1 # green $end
+$var reg 1 $ clk $end
+$var reg 1 % rst $end
+$scope module uut $end
+$var wire 1 $ clk $end
+$var wire 1 % rst $end
+$var parameter 2 & GREEN_STATE $end
+$var parameter 2 ' RED_STATE $end
+$var parameter 2 ( YELLOW_STATE $end
+$var reg 4 ) counter [3:0] $end
+$var reg 1 # green $end
+$var reg 1 " red $end
+$var reg 2 * state [1:0] $end
+$var reg 1 ! yellow $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b10 (
+b0 '
+b1 &
+$end
+#0
+$dumpvars
+b0 *
+b0 )
+1%
+0$
+0#
+1"
+0!
+$end
+#5
+1$
+#10
+0$
+#15
+1$
+#20
+0$
+0%
+#25
+b1 )
+1$
+#30
+0$
+#35
+b10 )
+1$
+#40
+0$
+#45
+b11 )
+1$
+#50
+0$
+#55
+b100 )
+1$
+#60
+0$
+#65
+b101 )
+1$
+#70
+0$
+#75
+b110 )
+1$
+#80
+0$
+#85
+b111 )
+1$
+#90
+0$
+#95
+1#
+0"
+b1 *
+b0 )
+1$
+#100
+0$
+#105
+b1 )
+1$
+#110
+0$
+#115
+b10 )
+1$
+#120
+0$
+#125
+b11 )
+1$
+#130
+0$
+#135
+b100 )
+1$
+#140
+0$
+#145
+b101 )
+1$
+#150
+0$
+#155
+b110 )
+1$
+#160
+0$
+#165
+b111 )
+1$
+#170
+0$
+#175
+1!
+0#
+b10 *
+b0 )
+1$
+#180
+0$
+#185
+b1 )
+1$
+#190
+0$
+#195
+b10 )
+1$
+#200
+0$
+#205
+b11 )
+1$
+#210
+0$
+#215
+1"
+0!
+b0 *
+b0 )
+1$
+#220
+0$
+#225
+b1 )
+1$
+#230
+0$
+#235
+b10 )
+1$
+#240
+0$
+#245
+b11 )
+1$
+#250
+0$
+#255
+b100 )
+1$
+#260
+0$
+#265
+b101 )
+1$
+#270
+0$
+#275
+b110 )
+1$
+#280
+0$
+#285
+b111 )
+1$
+#290
+0$

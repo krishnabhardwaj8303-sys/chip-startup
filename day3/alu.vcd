@@ -1,0 +1,97 @@
+$date
+	Mon Jul 27 18:22:44 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module alu_tb $end
+$var wire 1 ! zero $end
+$var wire 5 " result [4:0] $end
+$var reg 4 # a [3:0] $end
+$var reg 4 $ b [3:0] $end
+$var reg 3 % op [2:0] $end
+$scope module uut $end
+$var wire 4 & a [3:0] $end
+$var wire 4 ' b [3:0] $end
+$var wire 3 ( op [2:0] $end
+$var parameter 3 ) ADD $end
+$var parameter 3 * AND $end
+$var parameter 3 + NOT $end
+$var parameter 3 , OR $end
+$var parameter 3 - SHL $end
+$var parameter 3 . SHR $end
+$var parameter 3 / SUB $end
+$var parameter 3 0 XOR $end
+$var reg 5 1 result [4:0] $end
+$var reg 1 ! zero $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b100 0
+b1 /
+b111 .
+b110 -
+b11 ,
+b101 +
+b10 *
+b0 )
+$end
+#0
+$dumpvars
+b1000 1
+b0 (
+b11 '
+b101 &
+b0 %
+b11 $
+b101 #
+b1000 "
+0!
+$end
+#10
+b101 "
+b101 1
+b1 %
+b1 (
+b100 $
+b100 '
+b1001 #
+b1001 &
+#20
+b1000 "
+b1000 1
+b10 %
+b10 (
+b1010 $
+b1010 '
+b1100 #
+b1100 &
+#30
+b1110 "
+b1110 1
+b11 %
+b11 (
+#40
+1!
+b0 "
+b0 1
+b100 %
+b100 (
+b1100 $
+b1100 '
+#50
+0!
+b10 "
+b10 1
+b110 %
+b110 (
+b0 $
+b0 '
+b1 #
+b1 &
+#60
