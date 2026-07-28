@@ -1,0 +1,266 @@
+$date
+	Tue Jul 28 08:30:04 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module interrupt_tb $end
+$var wire 1 ! keys_erase $end
+$var wire 1 " irq_out $end
+$var wire 4 # irq_id [3:0] $end
+$var reg 1 $ clk $end
+$var reg 1 % irq_ack $end
+$var reg 4 & irq_mask [3:0] $end
+$var reg 1 ' rst $end
+$var reg 1 ( spi_irq $end
+$var reg 1 ) tamper_irq $end
+$var reg 1 * timer_irq $end
+$var reg 1 + uart_irq $end
+$scope module DUT $end
+$var wire 1 $ clk $end
+$var wire 1 % irq_ack $end
+$var wire 4 , irq_mask [3:0] $end
+$var wire 1 ' rst $end
+$var wire 1 ( spi_irq $end
+$var wire 1 ) tamper_irq $end
+$var wire 1 * timer_irq $end
+$var wire 1 + uart_irq $end
+$var parameter 2 - IDLE $end
+$var parameter 2 . PENDING $end
+$var parameter 2 / SERVING $end
+$var reg 4 0 irq_id [3:0] $end
+$var reg 1 " irq_out $end
+$var reg 4 1 irq_reg [3:0] $end
+$var reg 1 ! keys_erase $end
+$var reg 2 2 state [1:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b10 /
+b1 .
+b0 -
+$end
+#0
+$dumpvars
+b0 2
+b0 1
+b0 0
+b0 ,
+0+
+0*
+0)
+0(
+1'
+b0 &
+0%
+0$
+b0 #
+0"
+0!
+$end
+#5
+1$
+#10
+0$
+#15
+1$
+#20
+0$
+#25
+1$
+#30
+0$
+0'
+#35
+1$
+#40
+0$
+#45
+1$
+#50
+0$
+1*
+#55
+b10 1
+1$
+#60
+0$
+#65
+b10 2
+1"
+b10 #
+b10 0
+1$
+#70
+0$
+#75
+1$
+#80
+0$
+0*
+#85
+b0 1
+1$
+#90
+0$
+#95
+1$
+#100
+0$
+1%
+#105
+b0 2
+0"
+1$
+#110
+0$
+0%
+#115
+1$
+#120
+0$
+#125
+1$
+#130
+0$
+1+
+#135
+b100 1
+1$
+#140
+0$
+#145
+b10 2
+1"
+b11 #
+b11 0
+1$
+#150
+0$
+#155
+1$
+#160
+0$
+0+
+#165
+b0 1
+1$
+#170
+0$
+#175
+1$
+#180
+0$
+1%
+#185
+b0 2
+0"
+1$
+#190
+0$
+0%
+#195
+1$
+#200
+0$
+#205
+1$
+#210
+0$
+1)
+#215
+b1 1
+1$
+#220
+0$
+#225
+b10 2
+1!
+1"
+b1 #
+b1 0
+1$
+#230
+0$
+#235
+1$
+#240
+0$
+0)
+#245
+b0 1
+1$
+#250
+0$
+#255
+1$
+#260
+0$
+1%
+#265
+b0 2
+0!
+0"
+1$
+#270
+0$
+0%
+#275
+1$
+#280
+0$
+#285
+1$
+#290
+0$
+1)
+1*
+#295
+b11 1
+1$
+#300
+0$
+#305
+b10 2
+1!
+1"
+1$
+#310
+0$
+#315
+1$
+#320
+0$
+0)
+0*
+#325
+b0 1
+1$
+#330
+0$
+#335
+1$
+#340
+0$
+1%
+#345
+b0 2
+0!
+0"
+1$
+#350
+0$
+0%
+#355
+1$
+#360
+0$
+#365
+1$
+#370
+0$
