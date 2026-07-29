@@ -1,29 +1,80 @@
-# Chip Startup — Krishna Bhardwaj
-## ECE Student | Fabless Semiconductor Founder
+# BharatSE — India's First Student-Designed Secure Element
+## by Krishna Bhardwaj | ECE 2nd Year | Fabless Semiconductor Startup
 
-## Week 1 Progress
-Building a RISC-V style processor from scratch using Verilog.
+---
 
-## Modules Built
-| Day | Module | Description |
-|-----|--------|-------------|
-| 1 | LED Blink | Sequential logic, clock divider |
-| 2 | Traffic FSM | Finite State Machine design |
-| 3 | 4-bit ALU | ADD SUB AND OR XOR SHIFT |
-| 4 | Register File | 8x8-bit dual-port register file |
-| 5 | CPU v1 | ALU + Register File integrated |
-| 6 | CPU v2 | Added Program Counter + IMEM |
-| 7 | CPU Final | Full test suite, 16-cycle verification |
+## What is BharatSE?
+India's first open-source Secure Element IP Core —
+designed to replace imported NXP/Infineon chips in
+UPI payment terminals, POS devices, and soundboxes.
 
-## Tools Used (All Free)
+## The Problem
+- India processes 18 BILLION UPI transactions/month
+- Every POS/Soundbox uses IMPORTED secure elements
+- NXP, Infineon, STMicro — all foreign chips
+- Zero Indian secure element in production today
+
+## The Solution — BharatSE v1.0
+A fully verified, NIST-compliant Secure Element IP Core
+designed from scratch in 21 days using free tools.
+
+---
+
+## Architecture
+
+BharatSE
+├── PUF Block          → 128-bit unclonable device key
+├── AES-128 Core       → NIST FIPS-197 compliant encryption
+│   ├── S-Box          → NIST verified
+│   ├── Key Scheduler  → 11 round keys verified
+│   ├── Round Function → SubBytes+ShiftRows+MixCols+ARK
+│   └── Final Round    → 10-round complete pipeline
+├── UART Interface     → External communication
+└── Interrupt + Tamper → Hardware key zeroization
+
+---
+
+## Verification Results
+
+| Block | Test | Result |
+|-------|------|--------|
+| AES S-Box | NIST vectors | 6/6 PASS |
+| Key Scheduler | NIST FIPS-197 | PASS |
+| AES Core | Encryption | PASS |
+| PUF Key | Reproducibility | PASS |
+| Tamper Detection | Key Erase | PASS |
+| Full System | Integration | PASS |
+
+---
+
+## 21-Day Build Journey
+
+| Week | What I Built |
+|------|-------------|
+| Week 1 | CPU: ALU + Register File + Pipeline |
+| Week 2 | Protocols: UART + SPI + I2C + PWM |
+| Week 3 | BharatSE: AES + PUF + Tamper |
+
+---
+
+## Tools Used (100% Free)
 - Icarus Verilog — Simulation
-- GTKWave — Waveform viewing
-- Verilator — Fast simulation
+- Verilator — Fast simulation + coverage
+- GTKWave — Waveform analysis
 - Git + GitHub — Version control
+- OpenLane (next) — RTL to GDSII
 
-## Goal
-Building India's first student-led fabless semiconductor startup.
-Targeting MeitY DLI Scheme for chip tape-out funding.
+## Target Funding
+- MeitY DLI Scheme — Chip Design Infrastructure Support
+- Smart India Hackathon 2025
+- Startup India Recognition (DPIIT)
+
+## Market Opportunity
+- 18B+ UPI transactions/month
+- 10M+ POS terminals in India
+- Zero Indian secure element chips today
+- Target: Rs 5/chip royalty x 1M chips = Rs 5 Cr/year
 
 ## Contact
-GitHub: krishnabhardwaj8303-sys
+- GitHub: krishnabhardwaj8303-sys
+- Email: krishnabhardwaj8303@gmail.com
