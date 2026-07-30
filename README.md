@@ -1,9 +1,9 @@
-# BharatSE — India's First Student-Designed Secure Element
+# NeelChip BharatSE — India's First Student-Designed Secure Element
 ## by Krishna Bhardwaj | ECE 2nd Year | Fabless Semiconductor Startup
 
 ---
 
-## What is BharatSE?
+## What is NeelChip BharatSE?
 India's first open-source Secure Element IP Core —
 designed to replace imported NXP/Infineon chips in
 UPI payment terminals, POS devices, and soundboxes.
@@ -14,7 +14,7 @@ UPI payment terminals, POS devices, and soundboxes.
 - NXP, Infineon, STMicro — all foreign chips
 - Zero Indian secure element in production today
 
-## The Solution — BharatSE v1.0
+## The Solution — NeelChip BharatSE v1.0
 A fully verified, NIST-compliant Secure Element IP Core
 designed from scratch in 21 days using free tools.
 
@@ -22,7 +22,7 @@ designed from scratch in 21 days using free tools.
 
 ## Architecture
 
-BharatSE
+NeelChip BharatSE
 ├── PUF Block          → 128-bit unclonable device key
 ├── AES-128 Core       → NIST FIPS-197 compliant encryption
 │   ├── S-Box          → NIST verified
@@ -53,7 +53,7 @@ BharatSE
 |------|-------------|
 | Week 1 | CPU: ALU + Register File + Pipeline |
 | Week 2 | Protocols: UART + SPI + I2C + PWM |
-| Week 3 | BharatSE: AES + PUF + Tamper |
+| Week 3 | NeelChip BharatSE: AES + PUF + Tamper |
 
 ---
 
