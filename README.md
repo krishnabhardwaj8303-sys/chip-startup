@@ -89,6 +89,13 @@ A compact 4x4 systolic-array AI inference engine — the core compute building b
 Performs output = ReLU(Weight_Matrix x Input_Vector) — the fundamental operation repeated billions of times in every neural network.
 
 ### Architecture
+
+    Laghu-NPU
+    |-- 4x4 Systolic MAC Array    -> 16 parallel Multiply-Accumulate units
+    |-- Weight/Activation Buffers -> On-chip register storage
+    |-- ReLU Activation Unit      -> Non-linearity for neural net layers
+    +-- Control FSM               -> Load -> Compute -> Output sequencing
+
 ### Verification
 8-bit signed INT MAC operations, 32-bit accumulation. Test case: diagonal weight matrix x input vector — TEST PASSED (matched expected output exactly).
 
@@ -105,5 +112,13 @@ An unclonable hardware identity chip designed to combat India's ₹1 lakh crore+
 Fake spare parts, bearings, and pesticides cause equipment failure, crop loss, and safety incidents. Existing anti-counterfeiting (holograms, QR codes) is trivially cloned.
 
 ### Architecture
+
+    Kavach-ID
+    |-- Arbiter PUF Array (32-bit)  -> Silicon-variation-based unique fingerprint
+    |-- Challenge-Response Engine   -> Cryptographic authentication protocol
+    |-- Scrambler                   -> Obfuscates raw PUF output from leakage
+    |-- UART Interface              -> Host verification communication
+    +-- Control FSM                 -> Challenge -> PUF -> Scramble -> Respond
+
 ### Status
 Complete, simulation verified. OpenLane flow pending.
