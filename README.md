@@ -1,9 +1,9 @@
-# NeelChip NeelChip BharatSE — India's First Student-Designed Secure Element
+# NeelChip — India's First Student-Designed Secure Element
 ## by Krishna Bhardwaj | ECE 2nd Year | Fabless Semiconductor Startup
 
 ---
 
-## What is NeelChip NeelChip BharatSE?
+## What is NeelChip?
 India's first open-source Secure Element IP Core —
 designed to replace imported NXP/Infineon chips in
 UPI payment terminals, POS devices, and soundboxes.
@@ -14,7 +14,7 @@ UPI payment terminals, POS devices, and soundboxes.
 - NXP, Infineon, STMicro — all foreign chips
 - Zero Indian secure element in production today
 
-## The Solution — NeelChip NeelChip BharatSE v1.0
+## The Solution — NeelChip v1.0
 A fully verified, NIST-compliant Secure Element IP Core
 designed from scratch in 21 days using free tools.
 
@@ -22,7 +22,7 @@ designed from scratch in 21 days using free tools.
 
 ## Architecture
 
-NeelChip NeelChip BharatSE
+NeelChip
 ├── PUF Block          → 128-bit unclonable device key
 ├── AES-128 Core       → NIST FIPS-197 compliant encryption
 │   ├── S-Box          → NIST verified
@@ -53,7 +53,7 @@ NeelChip NeelChip BharatSE
 |------|-------------|
 | Week 1 | CPU: ALU + Register File + Pipeline |
 | Week 2 | Protocols: UART + SPI + I2C + PWM |
-| Week 3 | NeelChip NeelChip BharatSE: AES + PUF + Tamper |
+| Week 3 | NeelChip: AES + PUF + Tamper |
 
 ---
 
@@ -78,3 +78,32 @@ NeelChip NeelChip BharatSE
 ## Contact
 - GitHub: krishnabhardwaj8303-sys
 - Email: krishnabhardwaj8303@gmail.com
+
+---
+
+## Chip 2: Laghu-NPU — Edge AI Matrix-Multiply Accelerator
+
+A compact 4x4 systolic-array AI inference engine — the core compute building block used in edge AI accelerators (similar in principle to Google TPU / Apple Neural Engine, at student scale).
+
+### What It Does
+Performs output = ReLU(Weight_Matrix x Input_Vector) — the fundamental operation repeated billions of times in every neural network.
+
+### Architecture
+### Verification
+8-bit signed INT MAC operations, 32-bit accumulation. Test case: diagonal weight matrix x input vector — TEST PASSED (matched expected output exactly).
+
+### Status
+Complete, simulation verified. OpenLane flow pending.
+
+---
+
+## Chip 3: Kavach-ID — PUF-Based Anti-Counterfeit Authentication Chip
+
+An unclonable hardware identity chip designed to combat India's ₹1 lakh crore+/year counterfeit parts and agrochemical crisis — using silicon manufacturing variation as an uncopiable fingerprint.
+
+### The Problem
+Fake spare parts, bearings, and pesticides cause equipment failure, crop loss, and safety incidents. Existing anti-counterfeiting (holograms, QR codes) is trivially cloned.
+
+### Architecture
+### Status
+Complete, simulation verified. OpenLane flow pending.
