@@ -132,3 +132,60 @@ Complete, simulation verified. OpenLane flow pending.
 - 24/24 verification test cases PASS
 
 See: day20/production_v2/NEELCHIP_DATASHEET.md
+
+---
+
+## 🆕 Production Hardening Update (Post-Proposal Gap Closure)
+
+Following the technical roadmap outlined in the University R&D 
+Cell proposal, the following gaps have been actively closed with 
+verified RTL and passing testbenches:
+
+### NeelChip — Dedicated TRNG
+- Ring-oscillator-modeled True Random Number Generator, 
+  architecturally distinct from the PUF (identity) block
+- Von Neumann de-biasing to remove statistical bias
+- Built-in monobit statistical self-test (NIST SP 800-22 style)
+- **Status: RTL verified, consecutive outputs confirmed unique**
+
+### Laghu-NPU — Multi-Layer Chaining
+- Layer-to-layer chaining controller: Layer 1 (INT32 accumulator) 
+  output is saturated and requantized to INT8, then fed as Layer 
+  2 input — the core mechanism of real neural network inference
+- Addresses the proposal's primary limitation: *"cannot chain 
+  multiple layers... not a competitive AI accelerator"*
+- **Status: 2-layer chain verified, inter-layer overflow 
+  correctly saturated**
+
+### Kavach-ID — Encrypted Communication Channel
+- Session-nonce-based stream cipher replacing plaintext UART link
+- Fresh keystream per reader connection — same challenge produces 
+  different ciphertext across sessions (replay-resistant)
+- Symmetric encrypt/decrypt verified round-trip correct
+- **Status: 3/3 tests pass — wire-snoop and replay resistance 
+  both verified**
+
+### TropicBMS-RV — CAN-Lite Vehicle Bus Interface
+- Priority-based CAN frame controller for vehicle-level 
+  integration (motor controller, dashboard, charger)
+- Emergency thermal-trip frames use highest-priority CAN ID 
+  (0x001), preempting routine status broadcasts
+- **Status: Priority preemption verified — emergency frames 
+  never delayed by normal traffic**
+
+---
+
+## Verification Test Count (Cumulative)
+
+| Chip | Core Tests | Production Tests | Gap-Closure Tests | Total |
+|---|---|---|---|---|
+| NeelChip | 6 (NIST) | 24 | 2 (TRNG) | 32 |
+| Laghu-NPU | 1 | 14 | 3 (chaining) | 18 |
+| Kavach-ID | - | 7 | 3 (encryption) | 10 |
+| TropicBMS-RV | 6 | 10 | 3 (CAN) | 19 |
+| **Total** | | | | **79 passing test cases** |
+
+This update directly reflects Phase 1-2 of the roadmap proposed 
+to the R&D Cell: closing production-readiness gaps with verified 
+RTL, ahead of the OpenLane physical-design and Efabless 
+tape-out phases.
