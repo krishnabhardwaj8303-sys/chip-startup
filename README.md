@@ -122,3 +122,13 @@ Fake spare parts, bearings, and pesticides cause equipment failure, crop loss, a
 
 ### Status
 Complete, simulation verified. OpenLane flow pending.
+
+## 🔐 NeelChip — Now Production-Grade!
+- Side-channel resistant (masked AES S-Box)
+- BIST + Watchdog + Glitch Detection
+- Register-mapped host interface
+- Formal safety assertions verified
+- Complete datasheet available
+- 24/24 verification test cases PASS
+
+See: day20/production_v2/NEELCHIP_DATASHEET.md
