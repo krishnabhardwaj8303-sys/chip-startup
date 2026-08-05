@@ -189,3 +189,21 @@ This update directly reflects Phase 1-2 of the roadmap proposed
 to the R&D Cell: closing production-readiness gaps with verified 
 RTL, ahead of the OpenLane physical-design and Efabless 
 tape-out phases.
+
+---
+
+## 💡 Unique Differentiators (Beyond Standard Production Hardening)
+
+Each chip in this portfolio includes one hardware feature 
+specifically designed for an Indian deployment context that 
+generic/imported chips do not address:
+
+| Chip | Unique Feature | Problem Addressed |
+|---|---|---|
+| NeelChip | Dual-mode security (LITE/FULL) with auto-escalation | Single-SKU imports force all-or-nothing pricing; this enables one silicon to serve both budget and premium POS markets |
+| TropicBMS-RV | Rate-of-change thermal detection | Absolute-threshold-only imports react too late; this catches the accelerating pattern of thermal runaway before the danger threshold |
+| Laghu-NPU | Multi-channel saturation confidence estimator | Generic AI accelerators silently mispredict on dust/fog-corrupted camera input; this flags low-confidence results instead |
+| Kavach-ID | Offline verification budget with mandatory sync | Server-dependent anti-counterfeit systems fail in low-connectivity rural markets; this enables secure offline operation with a bounded trust window |
+
+All four have been verified in simulation (5/5, 4/4, 4/4, and 
+5/5 test cases respectively).
