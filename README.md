@@ -207,3 +207,11 @@ generic/imported chips do not address:
 
 All four have been verified in simulation (5/5, 4/4, 4/4, and 
 5/5 test cases respectively).
+
+---
+
+## 🆕 Round 2 Innovation — Additional Differentiators
+
+- **Kavach-ID:** Supply-chain provenance chaining — a 4-stage (Manufacturing → Distribution → Retail → Consumer) cryptographic chain that detects grey-market diversion (skipped stages) and relabeling attempts (duplicate stage recording). Verified: 3/3 tests pass.
+- **Laghu-NPU:** Sparsity-aware MAC skipping — clock-gates zero-weight processing elements, verified to save 50-75% estimated power on pruned model weights (a standard AI optimization technique) without affecting dense-matrix correctness. Verified: 4/4 tests pass.
+- **TropicBMS-RV:** State-of-Health (SOH) degradation tracking — cycle-counting with a realistic capacity-fade model, providing battery lifespan data (not just current charge) for warranty, resale, and predictive-maintenance use cases. Verified: 4/4 tests pass.
