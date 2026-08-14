@@ -101,3 +101,48 @@ window forces the system into a safe (disconnected) state.
 **NeelChip Technologies**
 Founder: Krishna Bhardwaj
 GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
+
+---
+
+## Revision 3.0 — Rate-of-Change Detection, CAN Bus, SOH Tracking, Full Integration
+
+### New Since Rev 2.0
+
+**Rate-of-Change Thermal Detection**
+- Tracks the RATE of temperature change between periodic samples, not just the absolute value, flagging the accelerating-rise signature characteristic of thermal runaway as an early warning
+- Verified to correctly fire at a temperature still approximately 800 ADC-counts below the absolute trip threshold, providing genuine predictive lead-time over a threshold-only design
+- Verified: no false warning on baseline sample or normal slow heating; correct warning on rapid rise; no false warning while cooling (negative rate correctly ignored)
+
+**CAN-Lite Vehicle Bus Interface**
+- Priority-based CAN frame controller enabling the BMS to broadcast status (SOC, temperature, fault flags) to the vehicle's motor controller, dashboard, and charger
+- Emergency thermal-trip frames use the highest-priority standard CAN ID (0x001), verified to correctly preempt routine periodic status broadcasts (0x100) even when both are requested in the same cycle
+- Note: this is a simplified frame-builder demonstrating the priority-arbitration architecture, not a complete CAN protocol implementation (no bit-stuffing, CRC, or bus arbitration logic) \u2014 a full CAN controller is a distinct, larger scope
+
+**State-of-Health (SOH) Degradation Tracking**
+- Full charge-discharge cycle counting via a high-water/low-water SOC-crossing detection method
+- Simplified linear capacity-fade model (1% SOH loss per 20 full cycles) reflecting typical lithium-ion aging behavior in the normal (pre-end-of-life) region
+- Provides battery lifespan data \u2014 not just instantaneous charge level \u2014 relevant for warranty administration, resale valuation, and predictive maintenance, a capability typically reserved for premium-tier imported BMS chips
+- Verified: new battery correctly starts at 100% SOH; 500-cycle simulation produces a realistic 75% SOH; end-of-life replacement warning correctly triggers at the 80% threshold
+
+**Full Chip Integration (TropicBMS-RV v2)**
+- Sensor voter, thermal trip, rate detector, coulomb counter, BIST, watchdog, register map, and CAN controller wired into a single top-level chip
+- Verified: single-sensor-fault correctly isolated by the voter while the system continues reporting a trustworthy value; thermal-runaway scenario correctly triggers both the emergency signal AND the highest-priority CAN broadcast, end-to-end through the integrated chip
+
+### Updated Register Map Addition
+
+| Address | Name | Access | Description |
+|---|---|---|---|
+| 0x14 | RATE_WARNING | R | bit0 = rate-of-change early warning flag |
+| 0x18 | SOH_STATUS | R | bit[7:0] = SOH percent, bit[23:8] = cycle count |
+| 0x1C | CAN_STATUS | R | Last transmitted CAN ID and frame-valid flag |
+
+### Updated Verification Summary
+
+| Test Category | Result |
+|---|---|
+| Rate-of-change thermal detection | 5/5 PASS |
+| CAN-lite interface | 3/3 PASS |
+| SOH degradation tracking | 4/4 PASS |
+| Full v2 integration | Core scenarios PASS |
+
+**Known Limitation Update:** No physical battery-pack hardware validation has been performed \u2014 all sensor and battery-physics behavior is simulated. GDSII physical design has not yet been started.
