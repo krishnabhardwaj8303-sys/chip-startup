@@ -101,3 +101,44 @@ guaranteeing the array never computes on partially-loaded data.
 **NeelChip Technologies**
 Founder: Krishna Bhardwaj
 GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
+
+---
+
+## Revision 3.0 — Multi-Layer Chaining, Confidence Estimation, Sparsity Gating, Full Integration
+
+### New Since Rev 2.0
+
+**Multi-Layer Chaining**
+- Layer-to-layer chaining controller: Layer 1's INT32 accumulator output is saturated and requantized to INT8, then correctly fed as Layer 2's activation input — demonstrating true multi-layer network inference rather than a single-layer demonstration
+- Verified: 2-layer chain data flow correct; inter-layer overflow correctly saturated at the layer boundary
+
+**Multi-Channel Saturation Confidence Estimator**
+- Detects the specific signature of dust/fog camera-sensor corruption: multiple simultaneously saturated activation channels
+- A single saturated channel (normal bright object in frame) is correctly NOT flagged; 3-4 simultaneously saturated channels ARE flagged as low-confidence
+- Verified: 4/4 test cases pass, including correct non-triggering on a normal bright-spot scenario
+
+**Sparsity-Aware MAC Skipping**
+- Clock-gates zero-weight Processing Elements, exploiting the fact that pruned neural-network models (a standard AI deployment optimization) contain 30-70% zero weights
+- Verified power-saving estimate: 50% at 8/16 zero weights, 75% at 12/16 zero weights, with correct per-PE targeting (verified that only the PE corresponding to a specific zero weight is gated, not others)
+
+**Full Chip Integration (Laghu-NPU v2)**
+- Core systolic array, hazard detector, confidence estimator, requantizer, BIST, and register map wired into a single top-level chip
+- Verified: BIST-via-register, clean-data compute producing correct MAC results, hazard-path wiring, and confidence-gated output (low-confidence inputs correctly zero the reported result rather than reporting a silently-wrong prediction)
+
+### Updated Register Map Addition
+
+| Address | Name | Access | Description |
+|---|---|---|---|
+| 0x28 | SPARSITY_STATUS | R | bit[4:0] = zero-weight count, bit[15:8] = estimated power-saved % |
+| 0x2C | CONFIDENCE_STATUS | R | bit0 = low-confidence flag, bit[3:1] = saturated-channel count |
+
+### Updated Verification Summary
+
+| Test Category | Result |
+|---|---|
+| Multi-layer chaining | 3/3 PASS |
+| Confidence estimator | 4/4 PASS |
+| Sparsity-aware gating | 4/4 PASS |
+| Full v2 integration | Core scenarios PASS |
+
+**Known Limitation Update:** GDSII physical design has not yet been started for this chip (unchanged from Rev 2.0) — this remains the largest gap toward production readiness alongside a real trained-model (e.g. MNIST) benchmark, which has also not yet been run.
