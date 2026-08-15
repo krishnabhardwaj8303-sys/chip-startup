@@ -5,3 +5,5 @@
 **/neelchip_safety/
 **/coverage_test/obj_dir/
 *.vcd
+*.backup3
+**/masked_sbox_formal/
