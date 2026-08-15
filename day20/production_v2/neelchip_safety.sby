@@ -1,0 +1,23 @@
+[options]
+mode bmc
+depth 20
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -formal glitch_detector.v
+read_verilog -formal bist_controller.v
+read_verilog -formal watchdog_timer.v
+read_verilog -formal register_map.v
+read_verilog -sv -formal safety_assertions.sv
+read_verilog -formal top_formal.v
+prep -top top_formal
+
+[files]
+glitch_detector.v
+bist_controller.v
+watchdog_timer.v
+register_map.v
+safety_assertions.sv
+top_formal.v

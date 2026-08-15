@@ -14,6 +14,7 @@ module register_map(
     input  wire        bist_fail_i,
     input  wire        wdt_timeout_i,
     input  wire        glitch_detected_i,
+    input  wire        glitch_now_i,      // Combinational — turant interlock ke liye
     input  wire        aes_done_i,
     input  wire [127:0] aes_result_i,
 
@@ -79,7 +80,8 @@ module register_map(
                 reg_ready <= 1;
                 case (reg_addr)
                     ADDR_CONTROL: begin
-                        aes_start_o  <= reg_wdata[0];
+                        // FIX: glitch detect hone par AES start block karo — security interlock
+                        aes_start_o  <= reg_wdata[0] && !glitch_now_i;
                         bist_start_o <= reg_wdata[1];
                         wdt_enable_o <= reg_wdata[2];
                     end

@@ -215,3 +215,27 @@ All four have been verified in simulation (5/5, 4/4, 4/4, and
 - **Kavach-ID:** Supply-chain provenance chaining — a 4-stage (Manufacturing → Distribution → Retail → Consumer) cryptographic chain that detects grey-market diversion (skipped stages) and relabeling attempts (duplicate stage recording). Verified: 3/3 tests pass.
 - **Laghu-NPU:** Sparsity-aware MAC skipping — clock-gates zero-weight processing elements, verified to save 50-75% estimated power on pruned model weights (a standard AI optimization technique) without affecting dense-matrix correctness. Verified: 4/4 tests pass.
 - **TropicBMS-RV:** State-of-Health (SOH) degradation tracking — cycle-counting with a realistic capacity-fade model, providing battery lifespan data (not just current charge) for warranty, resale, and predictive-maintenance use cases. Verified: 4/4 tests pass.
+
+## 🧪 Verification Deep-Dive (AES Coverage + Formal Proof)
+
+### AES-128 Core — Code Coverage (Verilator)
+- Started at 66% (135/204) — initial testbench only varied the low 32 bits of plaintext/key
+- Rewrote testbench with full 128-bit randomized stimulus (2000 vectors + all-0/all-1 corner cases)
+- Result: 100% (202/202) reachable coverage — remaining 2 points were structurally unreachable code (S-box default case, array declaration line), properly excluded via `verilator coverage_off/on`
+- Tool: Verilator 5.032, `--coverage` flag, `verilator_coverage --annotate`
+
+### Safety-Critical Logic — Formal Verification (SymbiYosys + Z3)
+- Tool: SymbiYosys (SBY v0.68) + Yosys 0.52 + Z3 SMT solver
+- Method: Bounded Model Checking (BMC), depth = 20 clock cycles
+- Modules verified: `glitch_detector.v`, `bist_controller.v`, `watchdog_timer.v`, `register_map.v`
+- 3 safety properties formally proven:
+  1. BIST failure always visible as done (no silent faulty-chip failures)
+  2. Watchdog timeout is sticky (only clears on explicit reset, not a routine kick)
+  3. Glitch attack blocks AES start (fault-injection cannot bypass encryption gating)
+
+**3 real RTL bugs found and fixed during this process:**
+1. `watchdog_timer.v` — `wdt_kick` could silently clear a latched timeout without reset
+2. `register_map.v` — glitch detection was report-only; no actual interlock blocked AES start
+3. `glitch_detector.v` + `register_map.v` — one-cycle race condition where a glitch and an AES-start write landing in the same cycle could bypass the interlock (fixed with a new combinational `glitch_now` signal)
+
+Final result: `Status: passed` — all 3 properties proven across the full 20-cycle bounded horizon, zero counterexamples.
