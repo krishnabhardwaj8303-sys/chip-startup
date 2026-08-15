@@ -9,3 +9,5 @@
 **/masked_sbox_formal/
 *.backup3
 **/masked_sbox_formal/
+**/coverage_test/
+**/trng_coverage/
