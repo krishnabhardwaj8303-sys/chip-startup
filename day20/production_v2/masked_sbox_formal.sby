@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 1
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal masked_sbox.v
+read -formal masked_sbox_formal.sv
+prep -top masked_sbox_formal
+
+[files]
+masked_sbox.v
+masked_sbox_formal.sv

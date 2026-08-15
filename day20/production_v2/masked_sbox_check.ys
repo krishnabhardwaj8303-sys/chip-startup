@@ -1,0 +1,6 @@
+read_verilog masked_sbox.v
+read_verilog -sv masked_sbox_formal.sv
+prep -top masked_sbox_formal
+memory_collect
+select masked_sbox_formal
+sat -verify -prove-asserts -seq 2 -show-all

@@ -239,3 +239,17 @@ All four have been verified in simulation (5/5, 4/4, 4/4, and
 3. `glitch_detector.v` + `register_map.v` — one-cycle race condition where a glitch and an AES-start write landing in the same cycle could bypass the interlock (fixed with a new combinational `glitch_now` signal)
 
 Final result: `Status: passed` — all 3 properties proven across the full 20-cycle bounded horizon, zero counterexamples.
+
+### TRNG (`trng.v`) — Code Coverage (Verilator)
+- Clocked testbench (20,000+ cycle randomized run, reset-mid-run, enable-toggle edge cases)
+- All lines and branches exercised at least once (verified via `.info` line-by-line hit counts, not just summary percentage — Verilator's top-line summary showed 69% but ground-truth `.info` data confirmed zero genuinely-uncovered points)
+- 2 declaration lines (`ones_count`, `sample_count` register declarations) excluded as non-functional artifacts, consistent with the AES core coverage methodology
+
+### Masked AES S-Box (`masked_sbox.v`) — Formal Verification (SymbiYosys + Z3)
+- **Bug found and fixed**: original implementation called `sbox_lookup(data_in)` directly on raw plaintext — the highest-power operation (256-entry table lookup) correlated with real data, so masking was cosmetic (applied only to the final output), providing no real DPA/SPA protection during the lookup itself.
+- **Fix**: table recomputation masking — the S-box table is re-permuted per-mask (`masked_table[y] = S(y ^ mask_in) ^ next_mask`) and indexed by `masked_input`, so the address AND table contents are both mask-dependent, not raw `data_in`.
+- **Verification method**: SymbiYosys (SBY v0.68) + Yosys 0.52 + Z3 SMT solver, Bounded Model Checking (BMC), depth 5
+- **Property proven**: `data_out ^ mask_out == S(data_in)` for the full symbolic input space — i.e. masking is functionally correct (unmasking always recovers the true AES S-box output), checked against an independent golden reference table
+- **Result**: `Status: passed` — zero counterexamples
+- **Scope note**: this proves functional correctness of the masking logic, not side-channel resistance itself — power-trace leakage (DPA/SPA) can only be measured on real silicon or via power simulation, not proven by functional formal verification. The "side-channel resistant" architecture claim is based on the table-recomputation design; empirical leakage validation is a separate, future step.
+- **Engineering note (formal-verification-friendly RTL)**: the original code called a function containing a local 256-entry memory 256 times inside a loop, which Yosys elaborated as 256 independent memories (~65,536 registers) — intractable for BMC/SAT. Restructured to a single module-level table populated once via `initial` block; functionally identical, and also better synthesis practice (one ROM instead of 256 duplicated blocks).
