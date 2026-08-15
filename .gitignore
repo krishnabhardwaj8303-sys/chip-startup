@@ -1,2 +1,7 @@
 *.vcd
 *_sim
+*.backup
+*.backup2
+**/neelchip_safety/
+**/coverage_test/obj_dir/
+*.vcd
