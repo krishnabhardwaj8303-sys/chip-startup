@@ -7,3 +7,5 @@
 *.vcd
 *.backup3
 **/masked_sbox_formal/
+*.backup3
+**/masked_sbox_formal/
