@@ -11,3 +11,6 @@
 **/masked_sbox_formal/
 **/coverage_test/
 **/trng_coverage/
+**/kavach_auth_formal/
+**/offline_formal/
+**/replay_formal/
