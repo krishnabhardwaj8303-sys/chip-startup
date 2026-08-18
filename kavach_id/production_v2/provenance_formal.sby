@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 15
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal provenance_chain.v
+read -formal provenance_formal.sv
+prep -top provenance_formal
+
+[files]
+provenance_chain.v
+provenance_formal.sv

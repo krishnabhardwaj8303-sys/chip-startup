@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 10
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal kavach_bist.v
+read -formal kavach_bist_formal.sv
+prep -top kavach_bist_formal
+
+[files]
+kavach_bist.v
+kavach_bist_formal.sv

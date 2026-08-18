@@ -295,3 +295,36 @@ Final result: `Status: passed` — all 3 properties proven across the full 20-cy
 - **Result**: `Status: passed` — zero counterexamples across the full 15-cycle bounded horizon.
 
 **Kavach-ID cumulative formal verification status**: 3 modules formally proven correct (`kavach_auth_gate.v`, `offline_verify_counter.v`, `replay_detector.v`), 1 real security bug found and fixed via simulation (`encrypted_channel.v` two-time-pad), 1 real hardware-enforcement gap found and closed via formal verification (`kavach_auth_gate.v` — replay/BIST detection previously had no actual interlock).
+
+### Kavach-ID — Extended Formal Verification + Register Map Integration
+
+Continuing from the two-time-pad fix and `kavach_auth_gate.v` interlock (above), three further modules were formally verified and the missing register-map integration was closed.
+
+**`kavach_bist.v` — Formal Verification (No Bug Found)**
+- Verification method: SymbiYosys + Z3, BMC, depth 10
+- Properties proven: (1) `bist_pass` and `bist_fail` are mutually exclusive — this promotes the `assume()` used earlier in `kavach_auth_formal.sv` from an assumption into a checked fact; (2) `bist_done` never asserts without a definite `bist_pass`/`bist_fail` result (no silent-failure hole)
+- Result: `Status: passed` — zero counterexamples
+
+**`provenance_chain.v` — Formal Verification (No Bug Found)**
+- Verification method: SymbiYosys + Z3, BMC, depth 15
+- Property proven: for every possible out-of-order stage-recording attempt (not just the specific skip/duplicate scenarios the existing simulation testbench covers), `sequence_violation` is exhaustively guaranteed to be raised — plus `chain_complete` only ever asserts once all 4 stages are recorded
+- Result: `Status: passed` — zero counterexamples
+
+**`puf_stabilizer.v` — Formal Verification (No Bug Found)**
+- Verification method: SymbiYosys + Z3, BMC, depth 5
+- Properties proven: (1) each of the 32 output bits of `stable_response` exactly matches the true 2-of-3 majority vote of the raw samples, proven exhaustively across the full symbolic input space via a per-bit generate-loop assertion (not just the 3 hand-picked noise scenarios in the existing testbench); (2) perfect 3-way sample agreement always yields zero unstable bits
+- Debugging note: `$past()` must be evaluated inside a clocked `always` block — an initial attempt computed the majority expression as a continuous-assignment `wire` outside the clocked block and failed to elaborate; fixed by inlining the full expression into the `assert` itself
+- Result: `Status: passed` — zero counterexamples
+
+**`replay_detector.v` — Formal Verification (No Bug Found)**
+- Verification method: SymbiYosys + Z3, BMC, depth 15
+- Property proven: the replay-detection audit counter (`history_hit_count`) is monotonically non-decreasing across all reachable states, guarding against any state-corruption path that could silently erase evidence of a past replay attempt
+- Result: `Status: passed` — zero counterexamples
+
+**`kavach_register_map.v` — New Testbench + `kavach_auth_gate.v` Integration**
+- **Gap found**: the register map had no testbench at all prior to this work — the host-facing register interface (CONTROL/STATUS/CHALLENGE/RESPONSE/UNSTABLE_COUNT/CHIP_ID) was completely unverified. Separately, `kavach_auth_gate.v` (added earlier) was not wired into the register map, so host software had no way to trigger `auth_request` or observe `authentication_grant`/`auth_denied_bist`/`auth_denied_replay`.
+- **Fix**: extended the register map with a new `auth_request_o` pulse output (CONTROL bit 2) and three new STATUS read bits (3=authentication_grant, 4=auth_denied_bist, 5=auth_denied_replay), and wrote a complete 13-test testbench covering every register, every control pulse, and the full read/write path.
+- **Debugging note**: the first testbench attempt checked pulse outputs (`bist_start_o` etc.) two clock edges after issuing a write, by which point the one-cycle pulse had already cleared — a test-timing bug, not a DUT bug (confirmed since the "pulses for only 1 cycle" check was passing at the same time, which only makes sense if the pulse had fired correctly and already ended). Fixed by checking pulse state immediately after the write-triggering clock edge, before deasserting `reg_write`.
+- **Result**: 13/13 tests pass, including full round-trip verification that a register-map-issued `auth_request` correctly reaches `kavach_auth_gate.v` and that its grant/deny outputs are correctly visible back through STATUS — closing the integration gap between the two modules end-to-end.
+
+**Kavach-ID cumulative formal verification status (updated)**: 6 modules formally proven correct (`kavach_auth_gate.v`, `kavach_bist.v`, `offline_verify_counter.v`, `replay_detector.v`, `provenance_chain.v`, `puf_stabilizer.v`), 1 real security bug found and fixed via simulation (`encrypted_channel.v` two-time-pad), 1 real hardware-enforcement gap found and closed via formal verification (`kavach_auth_gate.v`), and 1 previously-untested module (`kavach_register_map.v`) brought to full coverage with end-to-end integration verified.

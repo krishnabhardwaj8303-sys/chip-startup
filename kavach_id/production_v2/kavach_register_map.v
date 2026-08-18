@@ -14,13 +14,26 @@ module kavach_register_map(
     input  wire [31:0]  stable_response_i,
     input  wire [5:0]   unstable_bit_count_i,
 
+    // ── NEW: connects kavach_auth_gate.v, the enforcement module that
+    // was previously missing entirely - authentication_grant now has
+    // a real hardware source and is host-visible via STATUS.
+    input  wire         authentication_grant_i,
+    input  wire         auth_denied_bist_i,
+    input  wire         auth_denied_replay_i,
+
     output reg          bist_start_o,
     output reg          stabilizer_start_o,
-    output reg  [31:0]  challenge_o
+    output reg  [31:0]  challenge_o,
+    output reg          auth_request_o  // NEW: drives kavach_auth_gate
 );
     // ── REGISTER MAP ──
-    // 0x00: CONTROL (write) - bit0=bist_start, bit1=stabilizer_start
-    // 0x04: STATUS (read) - bit0=bist_pass, bit1=bist_fail, bit2=replay_detected
+    // 0x00: CONTROL (write) - bit0=bist_start, bit1=stabilizer_start,
+    //                          bit2=auth_request (NEW)
+    // 0x04: STATUS (read) - bit0=bist_pass, bit1=bist_fail,
+    //                        bit2=replay_detected,
+    //                        bit3=authentication_grant (NEW),
+    //                        bit4=auth_denied_bist (NEW),
+    //                        bit5=auth_denied_replay (NEW)
     // 0x08: CHALLENGE (write) - 32-bit challenge input
     // 0x0C: RESPONSE (read) - 32-bit stabilized response
     // 0x10: UNSTABLE_COUNT (read) - noise diagnostics
@@ -35,16 +48,18 @@ module kavach_register_map(
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            reg_rdata          <= 0;
-            reg_ready           <= 0;
-            bist_start_o        <= 0;
-            stabilizer_start_o  <= 0;
-            challenge_o         <= 0;
+            reg_rdata           <= 0;
+            reg_ready            <= 0;
+            bist_start_o         <= 0;
+            stabilizer_start_o   <= 0;
+            challenge_o          <= 0;
+            auth_request_o       <= 0;
         end
         else begin
-            reg_ready          <= 0;
-            bist_start_o        <= 0; // Pulse
-            stabilizer_start_o  <= 0; // Pulse
+            reg_ready           <= 0;
+            bist_start_o         <= 0; // Pulse
+            stabilizer_start_o   <= 0; // Pulse
+            auth_request_o       <= 0; // Pulse
 
             if (reg_write) begin
                 reg_ready <= 1;
@@ -52,6 +67,7 @@ module kavach_register_map(
                     ADDR_CONTROL: begin
                         bist_start_o       <= reg_wdata[0];
                         stabilizer_start_o <= reg_wdata[1];
+                        auth_request_o     <= reg_wdata[2];
                     end
                     ADDR_CHALLENGE: challenge_o <= reg_wdata;
                     default: ;
@@ -61,7 +77,10 @@ module kavach_register_map(
             if (reg_read) begin
                 reg_ready <= 1;
                 case (reg_addr)
-                    ADDR_STATUS: reg_rdata <= {29'b0,
+                    ADDR_STATUS: reg_rdata <= {26'b0,
+                                    auth_denied_replay_i,
+                                    auth_denied_bist_i,
+                                    authentication_grant_i,
                                     replay_detected_i,
                                     bist_fail_i,
                                     bist_pass_i};

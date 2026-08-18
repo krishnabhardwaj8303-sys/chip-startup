@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 5
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal puf_stabilizer.v
+read -formal puf_stabilizer_formal.sv
+prep -top puf_stabilizer_formal
+
+[files]
+puf_stabilizer.v
+puf_stabilizer_formal.sv

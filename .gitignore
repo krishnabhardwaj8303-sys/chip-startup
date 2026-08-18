@@ -23,3 +23,6 @@
 **/kavach_auth_formal/
 **/offline_formal/
 **/replay_formal/
+**/kavach_bist_formal/
+**/provenance_formal/
+**/puf_stabilizer_formal/
