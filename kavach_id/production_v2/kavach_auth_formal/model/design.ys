@@ -1,0 +1,10 @@
+# running in kavach_auth_formal/src/
+read -formal kavach_auth_gate.v
+read -formal kavach_safety_assertions.sv
+read -formal kavach_auth_formal.sv
+prep -top kavach_auth_formal
+
+hierarchy -smtcheck
+rename -witness
+write_jny -no-connections ../model/design.json
+write_rtlil ../model/design.il

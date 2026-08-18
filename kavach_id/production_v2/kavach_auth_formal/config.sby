@@ -1,0 +1,17 @@
+[options]
+mode bmc
+depth 10
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal kavach_auth_gate.v
+read -formal kavach_safety_assertions.sv
+read -formal kavach_auth_formal.sv
+prep -top kavach_auth_formal
+
+[files]
+kavach_auth_gate.v
+kavach_safety_assertions.sv
+kavach_auth_formal.sv
