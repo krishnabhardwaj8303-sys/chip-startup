@@ -1,6 +1,21 @@
 {
     "DESIGN_NAME": "kavach_id_top",
-    "VERILOG_FILES": "dir::src/*.v",
+    "VERILOG_FILES": [
+        "dir::production_v2/kavach_id_top.v",
+        "dir::production_v2/kavach_register_map.v",
+        "dir::production_v2/kavach_auth_gate.v",
+        "dir::production_v2/kavach_bist.v",
+        "dir::production_v2/replay_detector.v",
+        "dir::production_v2/provenance_chain.v",
+        "dir::production_v2/offline_verify_counter.v",
+        "dir::production_v2/encrypted_channel.v",
+        "dir::production_v2/puf_array.v",
+        "dir::production_v2/puf_stabilizer.v",
+        "dir::production_v2/scrambler.v",
+        "dir::production_v2/arbiter_puf_cell.v",
+        "dir::production_v2/uart_tx.v",
+        "dir::production_v2/uart_rx.v"
+    ],
     "CLOCK_PORT": "clk",
     "CLOCK_PERIOD": 25,
     "FP_CORE_UTIL": 20,

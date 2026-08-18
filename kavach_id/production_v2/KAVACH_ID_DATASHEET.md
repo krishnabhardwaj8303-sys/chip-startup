@@ -140,3 +140,41 @@ GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
 | Full v2 integration | Core scenarios PASS |
 
 **Known Limitation Update (unchanged, restated for emphasis):** PUF uniqueness and randomness fundamentally cannot be validated in RTL simulation. This is the single most important open item for this chip \u2014 it requires fabricated silicon and inter-chip Hamming-distance characterization to actually confirm the security property the entire chip depends on. GDSII physical design has also not yet been started.
+
+---
+
+## Revision 4.0 — Full Integration, Register Map Extension, Formal Verification Closure
+
+### New Since Rev 3.0
+
+**Full Top-Level Integration (`kavach_id_top.v`)**
+- Rev 3.0's integration existed only as a separate `kavach_id_v2_top.v` snapshot that predated `kavach_auth_gate.v` and `provenance_chain.v`. This revision replaces it with a single `production_v2/kavach_id_top.v` that instantiates all 8 security modules plus the PUF array, PUF stabilizer, scrambler, and UART blocks in one design.
+- `kavach_auth_gate.v` is now the sole authority for gating the UART transmit path — a message is only sent when `encrypt_done` AND `authentication_grant` are both true, replacing the earlier weaker "not replayed" check.
+- Elaborates cleanly under Icarus Verilog (`iverilog`), confirming all inter-module port connections are correct.
+
+**Register Map Extension**
+- `kavach_register_map.v` previously had no way to actually reach `provenance_chain.v` or `offline_verify_counter.v` — the addresses referenced in Rev 3.0's documentation (0x14, 0x18, 0x1C) did not yet exist in the RTL. This revision adds the real wiring:
+
+| Address | Name | Access | Description |
+|---|---|---|---|
+| 0x14 | PROVENANCE_STATUS | R | bit0=sequence_violation, bit1=chain_complete, bits[5:2]=stages_completed |
+| 0x18 | OFFLINE_BUDGET | R | bits[7:0]=offline_budget, bit8=verify_allowed, bit9=sync_required |
+| 0x1C | OFFLINE_CONTROL | W | bit0=sync_complete |
+| 0x20 | STAGE_ID | W | [1:0] — held until next provenance record |
+| 0x24 | STAGE_DATA | W | [31:0] — held until next provenance record |
+| 0x28 | CHAIN_HASH | R | Current cumulative provenance chain hash |
+| 0x2C | TOTAL_OFFLINE_USES | R | Lifetime offline-verification audit counter |
+
+- `CONTROL` (0x00) gains bit3=`record_stage` (triggers provenance recording) and bit4=`verify_request` (triggers offline-budget check).
+
+**Formal Verification Closure**
+- 6 modules now formally proven correct via SymbiYosys + Yosys + Z3 (Bounded Model Checking): `kavach_auth_gate.v`, `kavach_bist.v`, `offline_verify_counter.v`, `replay_detector.v`, `provenance_chain.v`, `puf_stabilizer.v` — zero counterexamples across all bound depths tested.
+- `kavach_register_map.v` brought from zero testbench coverage to 13/13 passing tests, including end-to-end verification that a register-issued `auth_request` correctly reaches `kavach_auth_gate.v` and its grant/deny result is correctly visible back through STATUS.
+
+**Build Configuration Fix**
+- `config.json`'s `VERILOG_FILES` previously pointed at the legacy `src/` prototype (pre-hardening, no BIST/auth-gate/register-map/encryption). It now explicitly lists all 14 `production_v2/` RTL files needed for `kavach_id_top`, so an OpenLane run will synthesize the actual verified/hardened design.
+
+### Known Limitations (carried forward)
+- PUF uniqueness and randomness still cannot be validated in RTL simulation — requires fabricated silicon and inter-chip Hamming-distance characterization.
+- GDSII physical design has not yet been started.
+- `src/` and `integrated_v2/` remain in the repo as legacy/intermediate snapshots, superseded by `production_v2/`.
