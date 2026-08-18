@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 60
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal offline_verify_counter.v
+read -formal offline_formal.sv
+prep -top offline_formal
+
+[files]
+offline_verify_counter.v
+offline_formal.sv
