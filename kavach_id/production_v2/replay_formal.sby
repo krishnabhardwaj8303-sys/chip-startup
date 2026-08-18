@@ -1,0 +1,15 @@
+[options]
+mode bmc
+depth 15
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal replay_detector.v
+read -formal replay_formal.sv
+prep -top replay_formal
+
+[files]
+replay_detector.v
+replay_formal.sv

@@ -274,3 +274,10 @@ Final result: `Status: passed` — all 3 properties proven across the full 20-cy
 - **Properties proven**: (1) a zero offline-verification budget can never result in a granted verification; (2) the offline budget can never exceed the factory-provisioned maximum (50) — guards against counter overflow/wraparound
 - **Debugging note**: an initial version of property 1 compared `verify_allowed` against the *current* (post-decrement) `offline_budget` rather than `$past(offline_budget)` — the budget value that existed when the grant decision was actually made. This produced a counterexample at step 52 that was not a real bug: on the final legitimate use of a budget of 1, `verify_allowed=1` and the *new* `offline_budget=0` are correctly registered together in the same observed cycle. Corrected to compare against `$past(offline_budget)`.
 - **Result**: `Status: passed` — zero counterexamples across the full 60-cycle bounded horizon.
+
+**`replay_detector.v` — Formal Verification (No Bug Found)**
+- **Verification method**: SymbiYosys + Z3, BMC, depth 15
+- **Property proven**: `history_hit_count` (the replay-detection audit counter) is monotonically non-decreasing across all reachable states — guards against any state-corruption path that could silently erase evidence of a past replay attempt from the audit trail.
+- **Result**: `Status: passed` — zero counterexamples across the full 15-cycle bounded horizon.
+
+**Kavach-ID cumulative formal verification status**: 3 modules formally proven correct (`kavach_auth_gate.v`, `offline_verify_counter.v`, `replay_detector.v`), 1 real security bug found and fixed via simulation (`encrypted_channel.v` two-time-pad), 1 real hardware-enforcement gap found and closed via formal verification (`kavach_auth_gate.v` — replay/BIST detection previously had no actual interlock).
