@@ -1,0 +1,52 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * arbiter puf cell -- reliability test (fixed chip, repeated noisy measurement)
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+ta0                 =  1.718945e-09
+tb0                 =  1.677357e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.722411e-09
+Warning from checkvalid: vector true_bit is not available or has zero length.
+Warning from checkvalid: vector j is not available or has zero length.
+Error: RHS "j + 1" invalid
+Warning from checkvalid: vector j is not available or has zero length.
+tbj                 =  1.677357e-09
+========================================
+RELIABILITY RESULT over 50 repeated measurements of one chip:
+matches true_bit: 0
+mismatches bit flips: 1
+========================================
+Note: Simulation executed from .control section 

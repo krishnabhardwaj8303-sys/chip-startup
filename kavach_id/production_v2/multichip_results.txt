@@ -1,0 +1,254 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * arbiter puf cell -- multi-chip reliability test
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+ta0                 =  1.732808e-09
+tb0                 =  1.663494e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.736274e-09
+Warning from checkvalid: vector true_bit is not available or has zero length.
+Warning from checkvalid: vector mismatch_count is not available or has zero length.
+Error: RHS "mismatch_count + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: RHS "idx + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: &true_bit: no such variable.
+Error: &match_count: no such variable.
+Error: &mismatch_count: no such variable.
+tbj                 =  1.663494e-09
+----------------------------------------
+Chip 1 : Ra0=1050 Rb0=950 true_bit=
+matches: / 20
+mismatches bit flips: / 20
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+ta0                 =  1.715479e-09
+tb0                 =  1.680822e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.709934e-09
+Warning from checkvalid: vector true_bit is not available or has zero length.
+Warning from checkvalid: vector mismatch_count is not available or has zero length.
+Error: RHS "mismatch_count + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: RHS "idx + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: &true_bit: no such variable.
+Error: &match_count: no such variable.
+Error: &mismatch_count: no such variable.
+tbj                 =  1.687061e-09
+----------------------------------------
+Chip 2 : Ra0=1025 Rb0=975 true_bit=
+matches: / 20
+mismatches bit flips: / 20
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+ta0                 =  1.706469e-09
+tb0                 =  1.689833e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.713400e-09
+Warning from checkvalid: vector true_bit is not available or has zero length.
+Warning from checkvalid: vector mismatch_count is not available or has zero length.
+Error: RHS "mismatch_count + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: RHS "idx + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: &true_bit: no such variable.
+Error: &match_count: no such variable.
+Error: &mismatch_count: no such variable.
+tbj                 =  1.685674e-09
+----------------------------------------
+Chip 3 : Ra0=1012 Rb0=988 true_bit=
+matches: / 20
+mismatches bit flips: / 20
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  7.52550e-09
+No. of Data Rows : 10014
+ta0                 =  1.701617e-09
+tb0                 =  1.694685e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.708548e-09
+Warning from checkvalid: vector true_bit is not available or has zero length.
+Warning from checkvalid: vector mismatch_count is not available or has zero length.
+Error: RHS "mismatch_count + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: RHS "idx + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: &true_bit: no such variable.
+Error: &match_count: no such variable.
+Error: &mismatch_count: no such variable.
+tbj                 =  1.692606e-09
+----------------------------------------
+Chip 4 : Ra0=1005 Rb0=995 true_bit=
+matches: / 20
+mismatches bit flips: / 20
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+ta0                 =  1.699537e-09
+tb0                 =  1.696765e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.694685e-09
+Warning from checkvalid: vector true_bit is not available or has zero length.
+Warning from checkvalid: vector mismatch_count is not available or has zero length.
+Error: RHS "mismatch_count + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: RHS "idx + 1" invalid
+Warning from checkvalid: vector idx is not available or has zero length.
+Error: &true_bit: no such variable.
+Error: &match_count: no such variable.
+Error: &mismatch_count: no such variable.
+tbj                 =  1.700230e-09
+----------------------------------------
+Chip 5 : Ra0=1002 Rb0=998 true_bit=
+matches: / 20
+mismatches bit flips: / 20
+----------------------------------------
+Multi-chip reliability sweep complete.
+Note: Simulation executed from .control section 

@@ -1,0 +1,913 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * arbiter puf cell -- reliability test (fixed chip, repeated noisy measurement)
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.722411e-09
+tbj                 =  1.677357e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.713400e-09
+tbj                 =  1.683595e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.725877e-09
+tbj                 =  1.673198e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.725877e-09
+tbj                 =  1.675277e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.714093e-09
+tbj                 =  1.680822e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723104e-09
+tbj                 =  1.681515e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723797e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  9.07550e-09
+No. of Data Rows : 10014
+taj                 =  1.720332e-09
+tbj                 =  1.676664e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.713400e-09
+tbj                 =  1.673891e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.715479e-09
+tbj                 =  1.679436e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.712707e-09
+tbj                 =  1.683595e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.715479e-09
+tbj                 =  1.670425e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.714093e-09
+tbj                 =  1.678743e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723797e-09
+tbj                 =  1.676664e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.712707e-09
+tbj                 =  1.675277e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723104e-09
+tbj                 =  1.681515e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  4.78850e-09
+No. of Data Rows : 10014
+taj                 =  1.722411e-09
+tbj                 =  1.682902e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.720332e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.725877e-09
+tbj                 =  1.677357e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.725877e-09
+tbj                 =  1.671812e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.713400e-09
+tbj                 =  1.680822e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723797e-09
+tbj                 =  1.683595e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.716866e-09
+tbj                 =  1.675970e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.717559e-09
+tbj                 =  1.676664e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.719638e-09
+tbj                 =  1.678050e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  2.49850e-09
+No. of Data Rows : 10014
+taj                 =  1.712707e-09
+tbj                 =  1.677357e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.718252e-09
+tbj                 =  1.674584e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.719638e-09
+tbj                 =  1.678743e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723797e-09
+tbj                 =  1.673891e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.725184e-09
+tbj                 =  1.682902e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.718945e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.720332e-09
+tbj                 =  1.672505e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.718252e-09
+tbj                 =  1.672505e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  3.06350e-09
+No. of Data Rows : 10014
+taj                 =  1.723797e-09
+tbj                 =  1.676664e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.719638e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.718252e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.716866e-09
+tbj                 =  1.672505e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.720332e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.719638e-09
+tbj                 =  1.682902e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.712014e-09
+tbj                 =  1.671812e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.717559e-09
+tbj                 =  1.671118e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  7.46550e-09
+No. of Data Rows : 10014
+taj                 =  1.720332e-09
+tbj                 =  1.682902e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.715479e-09
+tbj                 =  1.670425e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.716866e-09
+tbj                 =  1.671118e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.714786e-09
+tbj                 =  1.674584e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.724490e-09
+tbj                 =  1.680129e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.724490e-09
+tbj                 =  1.675277e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.723797e-09
+tbj                 =  1.675277e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+
+No. of Data Rows : 10014
+taj                 =  1.717559e-09
+tbj                 =  1.678743e-09
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+pulse_in                                     0
+a                                            0
+b                                            0
+vpulse#branch                                0
+
+ Reference value :  4.55750e-09
+No. of Data Rows : 10014
+taj                 =  1.721718e-09
+tbj                 =  1.684288e-09
+========================================
+RELIABILITY RESULT over 50 repeated measurements of one chip:
+Ra0=1030 Rb0=970 expected true_bit=0
+matches true_bit: 50
+mismatches bit flips: 0
+========================================
+Note: Simulation executed from .control section 
