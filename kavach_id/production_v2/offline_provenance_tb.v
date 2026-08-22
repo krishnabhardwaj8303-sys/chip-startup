@@ -49,7 +49,7 @@ module offline_provenance_tb;
 
         rst = 1; reg_write = 0; reg_read = 0; reg_addr = 0; reg_wdata = 0;
         uart_rx_in = 1;
-        #20; rst = 0; #10;
+        #20; rst = 0; #30; // extra settle time for 2-cycle reset_sync release
 
         $display("================================================");
         $display("  OFFLINE-VERIFY BUDGET + PROVENANCE CHAIN TESTS");
@@ -142,7 +142,7 @@ module offline_provenance_tb;
             $display("FAIL");
 
         $display("--- TEST G: Provenance chain - skipped stage triggers sequence_violation ---");
-        rst = 1; #20; rst = 0; #10; // fresh chip -> fresh provenance chain
+        rst = 1; #20; rst = 0; #30; // extra settle time for 2-cycle reset_sync release // fresh chip -> fresh provenance chain
 
         reg_wr(8'h14, 32'h0000_0000); reg_wr(8'h18, 32'h1111_0000);
         reg_wr(8'h00, 32'h0000_0010); repeat (3) @(posedge clk); // stage 0: Manufacturing

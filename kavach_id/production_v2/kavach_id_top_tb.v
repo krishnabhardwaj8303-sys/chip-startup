@@ -49,7 +49,7 @@ module kavach_id_top_tb;
 
         rst = 1; reg_write = 0; reg_read = 0; reg_addr = 0; reg_wdata = 0;
         uart_rx_in = 1;
-        #20; rst = 0; #10;
+        #20; rst = 0; #30; // extra settle time for 2-cycle reset_sync release
 
         $display("================================");
         $display("  KAVACH-ID TOP-LEVEL INTEGRATION");

@@ -16,13 +16,25 @@ module kavach_id_top(
     output wire          verification_blocked
 );
 
+    // ── RESET SYNCHRONIZER (hardening fix) ──
+    // See reset_sync.v for full rationale: async-assert, sync-deassert,
+    // guarantees every flop in this design sees reset release on the
+    // same clock edge, eliminating a reset-recovery/removal hazard that
+    // is invisible in RTL simulation but real on fabricated silicon.
+    wire rst_sync;
+    reset_sync RESET_SYNC (
+        .clk(clk),
+        .rst_in(rst),
+        .rst_out(rst_sync)
+    );
+
     // ═══════════════════════════════════════════
     // 1. REGISTER MAP
     // ═══════════════════════════════════════════
     wire         bist_start_o, stabilizer_start_o, auth_request_o;
     reg          auth_request_prev;
     wire         auth_request_pulse;
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst_sync) begin
         if (rst) auth_request_prev <= 0;
         else     auth_request_prev <= auth_request_o;
     end
@@ -45,7 +57,7 @@ module kavach_id_top(
     reg authentication_grant_i, auth_denied_bist_i, auth_denied_replay_i;
     reg auth_denied_budget_i;
 
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst_sync) begin
         if (rst) begin
             bist_pass_i <= 0;
             bist_fail_i <= 0;
@@ -65,7 +77,7 @@ module kavach_id_top(
     wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i;
     wire budget_denial_this_cycle = auth_grant_raw & ~verify_allowed_i;
 
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst_sync) begin
         if (rst) begin
             authentication_grant_i <= 0;
             auth_denied_bist_i     <= 0;
@@ -89,7 +101,7 @@ module kavach_id_top(
     end
 
     kavach_register_map REGMAP (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .reg_write(reg_write), .reg_read(reg_read),
         .reg_addr(reg_addr), .reg_wdata(reg_wdata),
         .reg_rdata(reg_rdata), .reg_ready(reg_ready),
@@ -123,7 +135,7 @@ module kavach_id_top(
     assign challenge_ready = stabilizer_start_o;
 
     replay_detector REPLAY (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .challenge_ready(challenge_ready),
         .challenge_in(challenge_o),
         .replay_detected(replay_detected_i),
@@ -160,13 +172,13 @@ module kavach_id_top(
                RS_P3   = 4'd7, RS_G3 = 4'd8, RS_C3 = 4'd9;
 
     puf_array PUF (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .pulse_in(puf_pulse),
         .challenge(challenge_o),
         .response(puf_response)
     );
 
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst_sync) begin
         if (rst) begin
             rs_state          <= RS_IDLE;
             puf_pulse         <= 1'b0;
@@ -210,7 +222,7 @@ module kavach_id_top(
     wire stable_done;
 
     puf_stabilizer STAB (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .start(puf_samples_ready),
         .raw_response_1(puf_sample_1),
         .raw_response_2(puf_sample_2),
@@ -238,7 +250,7 @@ module kavach_id_top(
     wire bist_done_unused;
 
     kavach_bist BIST (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .start_bist(bist_start_o),
         .bist_pass(bist_pass_raw),
         .bist_fail(bist_fail_raw),
@@ -250,7 +262,7 @@ module kavach_id_top(
     // 7. AUTHENTICATION GATE
     // ═══════════════════════════════════════════
     kavach_auth_gate AUTHGATE (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .auth_request(auth_request_pulse),
         .bist_fail(bist_fail_i),
         .bist_pass(bist_pass_i),
@@ -264,7 +276,7 @@ module kavach_id_top(
     // 8. OFFLINE VERIFICATION BUDGET
     // ═══════════════════════════════════════════
     offline_verify_counter OFFLINE (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .verify_request(auth_request_pulse),
         .sync_complete(sync_complete_o),
         .offline_budget(offline_budget_i),
@@ -277,7 +289,7 @@ module kavach_id_top(
     // 9. SUPPLY-CHAIN PROVENANCE CHAIN
     // ═══════════════════════════════════════════
     provenance_chain PROVENANCE (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .record_stage(record_stage_o),
         .stage_id(stage_id_o),
         .stage_data(stage_data_o),
@@ -295,7 +307,7 @@ module kavach_id_top(
     wire [15:0] session_nonce_unused, tx_msg_counter_out;
 
     encrypted_channel ENC (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .shared_key(32'hDEADBEEF),
         .new_session(stabilizer_start_o),
         .plaintext_in(scrambled_response),
@@ -322,7 +334,7 @@ module kavach_id_top(
     wire       uart_busy;
 
     uart_tx UART_TX (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .tx_start(uart_start),
         .data_in(uart_data),
         .tx_out(uart_tx_out),
@@ -333,13 +345,13 @@ module kavach_id_top(
     wire       rx_valid_unused;
 
     uart_rx UART_RX (
-        .clk(clk), .rst(rst),
+        .clk(clk), .rst(rst_sync),
         .rx_in(uart_rx_in),
         .data_out(rx_data_unused),
         .data_valid(rx_valid_unused)
     );
 
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge rst_sync) begin
         if (rst) begin
             tx_state     <= TX_IDLE;
             tx_shift_reg <= 32'd0;
