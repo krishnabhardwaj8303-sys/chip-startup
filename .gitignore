@@ -27,3 +27,6 @@
 **/provenance_formal/
 **/puf_stabilizer_formal/
 *.backup*
+**/kavach_top_check
+**/*_sim
+**/debug_sim*
