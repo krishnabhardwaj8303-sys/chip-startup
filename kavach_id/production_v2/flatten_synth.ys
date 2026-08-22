@@ -1,0 +1,5 @@
+read_verilog arbiter_puf_cell.v puf_array.v puf_stabilizer.v scrambler.v kavach_bist.v kavach_auth_gate.v provenance_chain.v offline_verify_counter.v encrypted_channel.v replay_detector.v uart_tx.v uart_rx.v kavach_register_map.v kavach_id_top.v
+synth -top kavach_id_top -flatten
+dfflibmap -liberty /home/krish/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+abc -liberty /home/krish/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+stat -liberty /home/krish/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sky130A/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib

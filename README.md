@@ -363,3 +363,11 @@ All previously-verified Kavach-ID modules existed as isolated, individually-test
 **SPICE-level PUF reliability (Monte Carlo, `arbiter_puf_cell.v`)**
 - Transistor-level Monte Carlo simulation of the arbiter PUF cell (30 iterations, rc-line delay-race abstraction) shows a near-balanced output distribution: 14 iterations resolved bit=1, 15 resolved bit=0, 1 unstable tie.
 - This near-50/50 split is a positive reliability indicator — a strongly biased PUF cell would produce predictable, low-entropy identity bits, undermining the security guarantee the whole chip depends on. The single observed tie is expected PUF metastability behavior, and is exactly the class of noise `puf_stabilizer.v` (majority-vote correction, formally verified earlier in this session) exists to correct.
+
+### Kavach-ID — Flattened Synthesis (Accurate Whole-Chip Area)
+
+Following the hierarchical synthesis run above, a flattened synthesis (`synth -flatten`) was run to get accurate whole-chip area and cell counts, without the "unknown area" submodule placeholders present in the hierarchical report.
+
+- **Final chip area: 22,371.46 μm²** (nominal process corner, `sky130_fd_sc_hd__tt_025C_1v80`) — lower than the hierarchical estimate (~30,608 μm²), as flattening allows Yosys/ABC to merge and eliminate redundant logic across former module boundaries that hierarchical synthesis cannot see across.
+- **435 flip-flops** (419 `dfrtp_1` + 8 `dfstp_2` + 8 `edfxtp_1`) — 48.88% of total chip area (10,935.49 μm²) is sequential logic, reflecting the state-heavy nature of this design (replay-detection history, provenance chain, offline-budget counter, session/message counters, etc.).
+- Clean synthesis: 0 errors. This is the accurate baseline figure to carry forward into OpenLane floorplanning/place-and-route.
