@@ -100,6 +100,24 @@ module kavach_id_top(
         end
     end
 
+    // ── PER-CHIP KEY STORAGE (hardening fix) ──
+    // See key_storage.v for full rationale: replaces the previously
+    // hardcoded 32'hDEADBEEF shared_key (identical across every chip
+    // built from this design) with a factory-programmable, write-once
+    // per-chip key.
+    wire         prog_enable_w;
+    wire [31:0]  prog_key_in_w;
+    wire         key_locked_w;
+    wire [31:0]  chip_key_w;
+
+    key_storage KEYSTORE (
+        .clk(clk), .rst(rst_sync),
+        .prog_enable(prog_enable_w),
+        .prog_key_in(prog_key_in_w),
+        .chip_key(chip_key_w),
+        .key_locked(key_locked_w)
+    );
+
     kavach_register_map REGMAP (
         .clk(clk), .rst(rst_sync),
         .reg_write(reg_write), .reg_read(reg_read),
@@ -125,7 +143,10 @@ module kavach_id_top(
         .sync_complete_o(sync_complete_o),
         .record_stage_o(record_stage_o),
         .stage_id_o(stage_id_o),
-        .stage_data_o(stage_data_o)
+        .stage_data_o(stage_data_o),
+        .key_locked_i(key_locked_w),
+        .prog_enable_o(prog_enable_w),
+        .prog_key_in_o(prog_key_in_w)
     );
 
     // ═══════════════════════════════════════════
@@ -308,7 +329,7 @@ module kavach_id_top(
 
     encrypted_channel ENC (
         .clk(clk), .rst(rst_sync),
-        .shared_key(32'hDEADBEEF),
+        .shared_key(chip_key_w),
         .new_session(stabilizer_start_o),
         .plaintext_in(scrambled_response),
         .encrypt_start(stable_done & authentication_grant_i),

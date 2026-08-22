@@ -35,7 +35,12 @@ module kavach_register_map(
     output reg          sync_complete_o,   // NEW
     output reg          record_stage_o,    // NEW
     output reg  [1:0]   stage_id_o,        // NEW
-    output reg  [31:0]  stage_data_o       // NEW
+    output reg  [31:0]  stage_data_o,      // NEW
+
+    // ── NEW: per-chip key programming interface ──
+    input  wire         key_locked_i,
+    output reg          prog_enable_o,
+    output reg  [31:0]  prog_key_in_o
 );
     // ── REGISTER MAP ──
     // 0x00: CONTROL (write) - bit0=bist_start, bit1=stabilizer_start,
@@ -69,6 +74,9 @@ module kavach_register_map(
     parameter ADDR_PROVENANCE  = 8'h1C;
     parameter ADDR_OFFLINE     = 8'h20;
     parameter ADDR_OFFLINE_USES = 8'h24;
+    parameter ADDR_KEY_DATA    = 8'h28;
+    parameter ADDR_KEY_CONTROL = 8'h2C;
+    parameter ADDR_KEY_STATUS  = 8'h30;
     parameter ADDR_CHIP_ID     = 8'hFC;
 
     always @(posedge clk or posedge rst) begin
@@ -83,6 +91,8 @@ module kavach_register_map(
             record_stage_o       <= 0;
             stage_id_o           <= 0;
             stage_data_o         <= 0;
+            prog_enable_o        <= 0;
+            prog_key_in_o        <= 0;
         end
         else begin
             reg_ready            <= 0;
@@ -91,6 +101,7 @@ module kavach_register_map(
             auth_request_o       <= 0; // Pulse
             sync_complete_o      <= 0; // Pulse
             record_stage_o       <= 0; // Pulse
+            prog_enable_o        <= 0; // Pulse
 
             if (reg_write) begin
                 reg_ready <= 1;
@@ -105,6 +116,8 @@ module kavach_register_map(
                     ADDR_CHALLENGE:  challenge_o  <= reg_wdata;
                     ADDR_STAGE_ID:   stage_id_o   <= reg_wdata[1:0];
                     ADDR_STAGE_DATA: stage_data_o <= reg_wdata;
+                    ADDR_KEY_DATA:    prog_key_in_o <= reg_wdata;
+                    ADDR_KEY_CONTROL: prog_enable_o <= reg_wdata[0];
                     default: ;
                 endcase
             end
@@ -129,6 +142,7 @@ module kavach_register_map(
                                     sync_required_i,
                                     offline_budget_i};
                     ADDR_OFFLINE_USES: reg_rdata <= {16'b0, total_offline_uses_i};
+                    ADDR_KEY_STATUS: reg_rdata <= {31'b0, key_locked_i};
                     ADDR_CHIP_ID:   reg_rdata <= 32'h4B415641; // "KAVA" hex
                     default:        reg_rdata <= 32'h0;
                 endcase
