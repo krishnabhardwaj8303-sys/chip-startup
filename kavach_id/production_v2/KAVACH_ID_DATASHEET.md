@@ -228,3 +228,15 @@ GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
 
 ### Updated Cumulative Status
 6 modules formally proven correct (unchanged from Rev 4.0); top-level integration now additionally verified via 11/11 passing simulation tests across two dedicated testbenches (`kavach_id_top_tb.v`, `offline_provenance_tb.v`), covering BIST health reporting, authentication grant/denial (replay, BIST-fail, and now budget-exhaustion paths), full 4-byte UART transmission, offline-budget decrement/exhaustion/restoration, and both correct-sequence and violation-detection provenance scenarios. Two additional real bugs (PUF stabilizer no-op, arbiter PUF combinational loop) found and fixed since Rev 4.0, on top of the five integration-level bugs listed above.
+
+---
+
+## Revision 5.1 — Reset Synchronization Hardening
+
+**Reset Recovery/Removal Hazard — Closed**
+- Identified: 17 `always @(posedge clk or posedge rst)` blocks across the design used the raw external reset directly. While correct for reset *assertion* (must react immediately), this is unsafe for reset *de-assertion*: if the external reset releases close to a clock edge, different flip-flops across the chip can sample the release on different cycles, leaving the chip in an inconsistent, undefined state at power-up — a hazard invisible in RTL simulation but real on fabricated silicon.
+- Fix: added `reset_sync.v`, a standard 2-stage async-assert/sync-deassert reset synchronizer. The external `rst` now only drives this synchronizer; every internal always-block uses the synchronized `rst_sync` output, guaranteeing all flops observe reset release on the same clock edge.
+- Verified: all 11 existing integration tests (`kavach_id_top_tb.v`, `offline_provenance_tb.v`) re-run and pass with no regressions after this change.
+
+**Scan-DFT Readiness Check**
+- Confirmed via Yosys post-synthesis selection (`select -assert-none t:$_DLATCH_*` / `t:$_SR_*`) that the design contains no unintended latches or SR-latch inference — the design is fully flip-flop-based synchronous logic, which is a prerequisite for straightforward scan-chain DFT insertion in a future physical-implementation pass.
