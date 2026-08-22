@@ -41,13 +41,9 @@ module kavach_id_top(
     wire [15:0]  total_offline_uses_i;
 
     // ── STICKY STATUS LATCHES ──
-    // (see prior integration commit for full rationale: bist_pass/
-    // bist_fail/authentication_grant/auth_denied_* are all one-cycle
-    // pulses from their source modules and must be latched here for a
-    // real host to reliably observe them via register polling)
     reg bist_pass_i, bist_fail_i;
     reg authentication_grant_i, auth_denied_bist_i, auth_denied_replay_i;
-    reg auth_denied_budget_i; // NEW: offline budget exhausted denial
+    reg auth_denied_budget_i;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -66,10 +62,6 @@ module kavach_id_top(
         end
     end
 
-    // Final grant now also requires the offline-verification budget to
-    // be non-exhausted (verify_allowed_i), enforcing the same property
-    // formally proven for offline_verify_counter.v in isolation: a
-    // zero-budget device must never be able to authenticate.
     wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i;
     wire budget_denial_this_cycle = auth_grant_raw & ~verify_allowed_i;
 
@@ -140,30 +132,89 @@ module kavach_id_top(
     );
 
     // ═══════════════════════════════════════════
-    // 3. PUF ARRAY
+    // 3. PUF ARRAY + RESAMPLE CONTROLLER
+    // FIX: puf_array was previously pulsed ONCE and its single response
+    // fed to all three puf_stabilizer inputs, making majority-voting a
+    // no-op at chip level (documented as a known limitation in README).
+    // This controller pulses the PUF array three separate times in
+    // sequence, latching each result into an independent sample
+    // register, so puf_stabilizer receives three genuinely distinct
+    // reads matching its own (already formally-verified) interface.
+    // SCOPE NOTE: in RTL/Icarus behavioral simulation, arbiter_puf_cell's
+    // buf-chain delay paths have zero simulated delay, so all three
+    // reads will be bit-identical here regardless of this fix - this
+    // corrects the ARCHITECTURE (three independent reads instead of one
+    // read reused three times), not the simulator's ability to model
+    // real silicon timing jitter. Genuine noise-correction behavior can
+    // only be observed on fabricated silicon or via SDF-annotated
+    // post-synthesis timing simulation.
     // ═══════════════════════════════════════════
     wire [31:0] puf_response;
+    reg         puf_pulse;
+    reg  [31:0] puf_sample_1, puf_sample_2, puf_sample_3;
+    reg         puf_samples_ready;
+    reg  [3:0]  rs_state;
+
+    localparam RS_IDLE = 4'd0, RS_P1 = 4'd1, RS_G1 = 4'd2, RS_C1 = 4'd3,
+               RS_P2   = 4'd4, RS_G2 = 4'd5, RS_C2 = 4'd6,
+               RS_P3   = 4'd7, RS_G3 = 4'd8, RS_C3 = 4'd9;
 
     puf_array PUF (
         .clk(clk), .rst(rst),
-        .pulse_in(stabilizer_start_o),
+        .pulse_in(puf_pulse),
         .challenge(challenge_o),
         .response(puf_response)
     );
 
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            rs_state          <= RS_IDLE;
+            puf_pulse         <= 1'b0;
+            puf_sample_1      <= 32'd0;
+            puf_sample_2      <= 32'd0;
+            puf_sample_3      <= 32'd0;
+            puf_samples_ready <= 1'b0;
+        end
+        else begin
+            puf_samples_ready <= 1'b0;
+            case (rs_state)
+                RS_IDLE: begin
+                    if (stabilizer_start_o & ~replay_detected_i) begin
+                        puf_pulse <= 1'b1;
+                        rs_state  <= RS_P1;
+                    end
+                end
+                RS_P1: begin puf_pulse <= 1'b0; rs_state <= RS_G1; end
+                RS_G1: begin rs_state <= RS_C1; end
+                RS_C1: begin puf_sample_1 <= puf_response; puf_pulse <= 1'b1; rs_state <= RS_P2; end
+                RS_P2: begin puf_pulse <= 1'b0; rs_state <= RS_G2; end
+                RS_G2: begin rs_state <= RS_C2; end
+                RS_C2: begin puf_sample_2 <= puf_response; puf_pulse <= 1'b1; rs_state <= RS_P3; end
+                RS_P3: begin puf_pulse <= 1'b0; rs_state <= RS_G3; end
+                RS_G3: begin rs_state <= RS_C3; end
+                RS_C3: begin
+                    puf_sample_3      <= puf_response;
+                    puf_samples_ready <= 1'b1;
+                    rs_state          <= RS_IDLE;
+                end
+                default: rs_state <= RS_IDLE;
+            endcase
+        end
+    end
+
     // ═══════════════════════════════════════════
     // 4. PUF STABILIZER
-    // KNOWN LIMITATION (see README): all three "samples" are the same
-    // combinational puf_response value in this integration.
+    // Now driven by three genuinely independent resampled reads
+    // (see resample controller above), not one value reused three times.
     // ═══════════════════════════════════════════
     wire stable_done;
 
     puf_stabilizer STAB (
         .clk(clk), .rst(rst),
-        .start(stabilizer_start_o & ~replay_detected_i),
-        .raw_response_1(puf_response),
-        .raw_response_2(puf_response),
-        .raw_response_3(puf_response),
+        .start(puf_samples_ready),
+        .raw_response_1(puf_sample_1),
+        .raw_response_2(puf_sample_2),
+        .raw_response_3(puf_sample_3),
         .stable_response(stable_response_i),
         .unstable_bit_mask(),
         .stable_done(stable_done),
@@ -210,11 +261,7 @@ module kavach_id_top(
     );
 
     // ═══════════════════════════════════════════
-    // 8. OFFLINE VERIFICATION BUDGET (NEW - was previously unwired)
-    // Every auth_request consumes one unit of offline budget - closes
-    // the same real-world gap the module's own README documents (rural/
-    // low-connectivity deployment) at the top-chip level, not just in
-    // isolated simulation.
+    // 8. OFFLINE VERIFICATION BUDGET
     // ═══════════════════════════════════════════
     offline_verify_counter OFFLINE (
         .clk(clk), .rst(rst),
@@ -227,10 +274,7 @@ module kavach_id_top(
     );
 
     // ═══════════════════════════════════════════
-    // 9. SUPPLY-CHAIN PROVENANCE CHAIN (NEW - was previously unwired)
-    // Host drives this independently via STAGE_ID/STAGE_DATA/CONTROL[4]
-    // - it is a separate audit function from device authentication, not
-    // part of the auth_request critical path.
+    // 9. SUPPLY-CHAIN PROVENANCE CHAIN
     // ═══════════════════════════════════════════
     provenance_chain PROVENANCE (
         .clk(clk), .rst(rst),
