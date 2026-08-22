@@ -178,3 +178,53 @@ GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
 - PUF uniqueness and randomness still cannot be validated in RTL simulation — requires fabricated silicon and inter-chip Hamming-distance characterization.
 - GDSII physical design has not yet been started.
 - `src/` and `integrated_v2/` remain in the repo as legacy/intermediate snapshots, superseded by `production_v2/`.
+
+---
+
+## Revision 5.0 — Top-Level Integration Bug Fixes, SKY130 Synthesis, Repository Cleanup
+
+### New Since Rev 4.0
+
+**Sticky Status Latch Fix**
+- Bug found: `kavach_bist.v` and `kavach_auth_gate.v` outputs (`bist_pass`, `bist_fail`, `authentication_grant`, `auth_denied_bist`, `auth_denied_replay`) are all one-cycle pulses. Each module's own isolated testbench sampled the result on the exact cycle it appeared, masking the issue. A real host polling STATUS a few cycles later — the realistic scenario — saw the pulse already gone, reading back all-zero.
+- Fix: added sticky latch registers at top level, cleared only when the next corresponding operation begins (`bist_start` / `auth_request`) or on reset.
+- Verified via a new dedicated top-level testbench (`kavach_id_top_tb.v`), which initially failed all 4 tests pre-fix and passed all 4 post-fix.
+
+**UART Full-Response Transmission Fix**
+- Bug found: the UART TX path transmitted only the top byte (`ciphertext_out[31:24]`) of the 32-bit encrypted response via a single un-sequenced assignment — the receiver only ever got 25% of the authenticated response.
+- Fix: restored a proper 4-byte send sequence (`TX_IDLE → TX_B1 → TX_B2 → TX_B3`), gated so transmission only occurs on a genuine `authentication_grant`.
+
+**Offline-Verify Counter and Provenance Chain — Now Wired to Top Level**
+- Both modules were formally verified in isolation (Rev 4.0) but never connected to `kavach_id_top.v`. This revision wires both in:
+  - `offline_verify_counter.v`: every `auth_request` now consumes one unit of offline budget; `authentication_grant` is now additionally gated on `verify_allowed` (non-exhausted budget) — enforcing at chip level the same property already formally proven for the module in isolation.
+  - `provenance_chain.v`: host can now record supply-chain stages via new `STAGE_ID`/`STAGE_DATA`/`CONTROL[bit4]` registers, independent of the authentication critical path.
+- New register map addresses: `0x14` PROVENANCE_STATUS, `0x18` OFFLINE_BUDGET, `0x1C` OFFLINE_CONTROL, `0x20` STAGE_ID, `0x24` STAGE_DATA.
+
+**Double-Pulse / Dead-Condition Bug (auth_request → offline budget)**
+- Bug found: a top-level testbench for the newly-wired offline counter showed the budget decrementing by 2 per logical request instead of 1 (50→40 after 5 requests, not 50→45), and a separate `verification_blocked` flag never asserting on budget exhaustion despite `authentication_grant` correctly being withheld.
+- Root cause: (1) the raw `auth_request_o` register-map output was being fed directly into both `kavach_auth_gate` and `offline_verify_counter`, and observed to assert across two consecutive clock edges in simulation trace, causing a double count; (2) the `budget_denial_this_cycle` expression included a dead condition (`auth_request_o & auth_grant_raw`) that could structurally never be true, since `auth_grant_raw` only becomes valid on the cycle *after* `auth_request_o` has already deasserted.
+- Fix: replaced all raw `auth_request_o` consumers with an edge-detected, guaranteed single-cycle `auth_request_pulse` (`auth_request_o & ~auth_request_prev`), and removed the dead condition from `budget_denial_this_cycle`.
+- Verified via a dedicated `offline_provenance_tb.v` covering budget decrement, exhaustion/denial, `sync_complete` budget restoration, and both correct-sequence and skipped-stage provenance scenarios — 7/7 tests pass.
+
+**`puf_stabilizer.v` Top-Level "No-Op" Limitation — Closed**
+- Previously documented limitation: all three inputs to `puf_stabilizer` (`raw_response_1/2/3`) were wired to the same single `puf_array` read, making the majority-voting logic a no-op at chip level despite being formally verified in isolation.
+- Fix: added a PUF resample controller (a small FSM) that pulses `puf_array` three separate times in sequence, latching each result into an independent sample register, before triggering `puf_stabilizer` with three genuinely distinct reads.
+- Scope note (stated for accuracy): in RTL/Icarus behavioral simulation, `arbiter_puf_cell`'s delay-chain paths have zero simulated delay, so all three resampled reads remain bit-identical in this simulation environment regardless of this fix. This change corrects the **architecture** (three independent reads vs. one read reused three times) — genuine noise-correction behavior can only be observed on fabricated silicon or via SDF-annotated post-synthesis timing simulation.
+
+**`arbiter_puf_cell.v` — Combinational Feedback Loop Fixed**
+- Bug found: Yosys `synth -flatten` + CHECK reported 64 combinational logic-loop warnings (2 per PUF cell × 32 cells). Root cause: `mux_a`/`mux_b` fed back from `path_a`/`path_b` themselves whenever `challenge_bit` selected that branch (e.g. `mux_a = challenge_bit ? pulse_in : path_a` combined with `path_a = buf(mux_a)` creates `path_a = buf(path_a)` when `challenge_bit = 0`) — a literal self-referencing loop with no real signal ever propagating on that path for that challenge polarity.
+- Fix: both delay chains (`raw_a`, `raw_b`) are now driven unconditionally from `pulse_in` with zero feedback; `challenge_bit` instead swaps which physical buffer output is labeled `path_a` vs. `path_b` before arbitration, preserving the intended "challenge selects routing" behavior without any loop.
+- Result: post-fix synthesis reports 0 logic-loop warnings (down from 64); all 11 integration tests (top-level + offline/provenance) re-verified passing with no regressions.
+
+**Updated Synthesis Results (SKY130, post-bug-fix RTL)**
+- Tool: Yosys 0.52, `synth -flatten`, technology-mapped via `dfflibmap` + `abc` against the SkyWater SKY130 HD standard-cell library (`sky130_fd_sc_hd`, `tt_025C_1v80` typical corner).
+- Result: **1,611 mapped standard cells, 18,271.27 µm² (≈0.0183 mm²) chip area**, of which 49.72% is sequential (flip-flop) area.
+- Scope note: this is a **pre-place-and-route** standard-cell area estimate. It does not include routing overhead, cell spacing, or floorplan utilization margin; final post-place-and-route die area is typically 20–40% larger than this figure, consistent with realistic standard-cell utilization densities (60–80%, not 100%).
+- This supersedes the earlier Rev 4.0-era hierarchical/generic-gate estimate, which predated all of the bug fixes listed above and was not technology-mapped to a specific standard-cell library.
+
+**Repository Cleanup**
+- Confirmed via `diff` that `kavach_id/integrated_v2/` (an intermediate checkpoint predating `kavach_auth_gate.v` and `provenance_chain.v`) contained no logic beyond what is already present and superseded in `production_v2/`; removed from the repository (preserved in git history).
+- Confirmed no stray root-level `config.json` exists outside `kavach_id/config.json`.
+
+### Updated Cumulative Status
+6 modules formally proven correct (unchanged from Rev 4.0); top-level integration now additionally verified via 11/11 passing simulation tests across two dedicated testbenches (`kavach_id_top_tb.v`, `offline_provenance_tb.v`), covering BIST health reporting, authentication grant/denial (replay, BIST-fail, and now budget-exhaustion paths), full 4-byte UART transmission, offline-budget decrement/exhaustion/restoration, and both correct-sequence and violation-detection provenance scenarios. Two additional real bugs (PUF stabilizer no-op, arbiter PUF combinational loop) found and fixed since Rev 4.0, on top of the five integration-level bugs listed above.
