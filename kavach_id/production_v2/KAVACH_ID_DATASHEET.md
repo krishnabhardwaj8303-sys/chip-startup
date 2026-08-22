@@ -242,3 +242,6 @@ GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
 - Confirmed via Yosys post-synthesis selection (`select -assert-none t:$_DLATCH_*` / `t:$_SR_*`) that the design contains no unintended latches or SR-latch inference — the design is fully flip-flop-based synchronous logic, which is a prerequisite for straightforward scan-chain DFT insertion in a future physical-implementation pass.
 
 ---
+
+**Module-Level Combinational Loop Audit**
+- Following the arbiter_puf_cell.v loop fix (Rev 5.0), all 11 remaining production_v2/ modules were individually flatten-synthesized and checked (Yosys `synth -flatten` + CHECK): kavach_bist.v, kavach_auth_gate.v, replay_detector.v, provenance_chain.v, offline_verify_counter.v, encrypted_channel.v, kavach_register_map.v, puf_stabilizer.v, scrambler.v, uart_tx.v, uart_rx.v — zero logic-loop warnings across all 11, confirming the arbiter_puf_cell.v issue was isolated and no other module has a similar structural hazard.
