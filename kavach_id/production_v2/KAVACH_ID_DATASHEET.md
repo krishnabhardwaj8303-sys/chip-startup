@@ -245,3 +245,18 @@ GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
 
 **Module-Level Combinational Loop Audit**
 - Following the arbiter_puf_cell.v loop fix (Rev 5.0), all 11 remaining production_v2/ modules were individually flatten-synthesized and checked (Yosys `synth -flatten` + CHECK): kavach_bist.v, kavach_auth_gate.v, replay_detector.v, provenance_chain.v, offline_verify_counter.v, encrypted_channel.v, kavach_register_map.v, puf_stabilizer.v, scrambler.v, uart_tx.v, uart_rx.v — zero logic-loop warnings across all 11, confirming the arbiter_puf_cell.v issue was isolated and no other module has a similar structural hazard.
+
+---
+
+## Revision 5.2 — Per-Chip Key Provisioning (Hardcoded Key Security Fix)
+
+**Hardcoded `shared_key` — Closed**
+- Identified: `encrypted_channel.v`'s `shared_key` input was hardcoded to `32'hDEADBEEF` directly in `kavach_id_top.v`, with a comment noting this "would come from PUF-derived secret" — never implemented. Every chip built from this design shared an identical key, meaning encryption was uniform (and breakable) across the entire product line: compromising one chip's key compromised all of them.
+- Fix: added `key_storage.v`, a factory-programmable, write-once key register. A new register-map interface (`KEY_DATA` 0x28, `KEY_CONTROL` 0x2C bit0=`prog_enable`, `KEY_STATUS` 0x30 bit0=`key_locked`) allows the key to be written exactly once; `key_locked` then permanently blocks further writes until reset. `encrypted_channel.v`'s `shared_key` now sources from this per-chip register instead of a hardcoded constant.
+- Scope note: this is a **behavioral** model of one-time-programmability (an ordinary register + lock bit), not a physical OTP/e-fuse hardware macro. A real OTP/e-fuse macro (fab/PDK-specific, physically unrewritable even across power cycles) must replace this behavioral register at the physical-implementation stage before tape-out.
+- Verified via a dedicated testbench (`key_storage_tb.v`): (1) key starts unprogrammed/unlocked, (2) a factory write correctly programs the key and sets `key_locked`, (3) a subsequent write attempt with a different key value is correctly rejected, preserving the original key. 3/3 tests pass. All 14 existing integration tests (`kavach_id_top_tb.v`, `offline_provenance_tb.v`, plus this new suite) re-verified passing with no regressions.
+
+### Remaining Known Architectural Gaps (documented, not yet addressed)
+- **Arbiter PUF layout symmetry**: the security property of `arbiter_puf_cell.v` depends on its two delay paths being electrically symmetric. Generic automated place-and-route does not guarantee this; dedicated placement/routing constraints will be required at the physical-implementation stage.
+- **Host interface**: the chip currently exposes a parallel register bus and UART — neither is directly compatible with a smartphone. An NFC front-end (new RTL/analog work) or a bridge microcontroller (product-level, not chip-level) is required for direct phone connectivity.
+- **Clock and reset sourcing for deployed/passive operation**: the design currently assumes an externally supplied `clk` and `rst`, suitable for lab/bench testing. A deployed, potentially passively-powered product (e.g. an NFC-powered tag) will require an on-chip oscillator and a power-on-reset (POR) circuit, neither of which exists in the current RTL.
