@@ -260,3 +260,33 @@ GitHub: github.com/krishnabhardwaj8303-sys/chip-startup
 - **Arbiter PUF layout symmetry**: the security property of `arbiter_puf_cell.v` depends on its two delay paths being electrically symmetric. Generic automated place-and-route does not guarantee this; dedicated placement/routing constraints will be required at the physical-implementation stage.
 - **Host interface**: the chip currently exposes a parallel register bus and UART — neither is directly compatible with a smartphone. An NFC front-end (new RTL/analog work) or a bridge microcontroller (product-level, not chip-level) is required for direct phone connectivity.
 - **Clock and reset sourcing for deployed/passive operation**: the design currently assumes an externally supplied `clk` and `rst`, suitable for lab/bench testing. A deployed, potentially passively-powered product (e.g. an NFC-powered tag) will require an on-chip oscillator and a power-on-reset (POR) circuit, neither of which exists in the current RTL.
+
+---
+
+## Revision 5.3 — Full UART-Protocol Interface Hardening
+
+**~50-Pin Parallel Register Bus — Closed**
+- Identified: `kavach_id_top.v` previously exposed its internal parallel register bus (`reg_write`, `reg_read`, `reg_addr[7:0]`, `reg_wdata[31:0]`, `reg_rdata[31:0]`, `reg_ready`) directly as top-level chip pins, alongside a separate UART — roughly 50 external pins, with which no realistic reader device or smartphone can physically interface.
+- Fix: added `uart_to_reg_bridge.v`, moving the register bus fully inside the chip. Externally, `kavach_id_top.v` now exposes only `clk`, `rst`, `uart_rx_in`, `uart_tx_out` (plus `chip_healthy`/`verification_blocked` status outputs). A host communicates using a fixed 6-byte frame: `[CMD(1B)] [ADDR(1B)] [DATA(4B, MSB-first)]`, with `CMD=0x01` for WRITE and `CMD=0x02` for READ (4-byte response).
+
+**UART Pin Conflict (Auto-Push vs Host-Driven Protocol) — Closed**
+- Identified: a dedicated `UART_TX`/`UART_RX` pair previously auto-pushed the encrypted PUF response on every successful authentication, sharing the same physical `uart_tx_out`/`uart_rx_in` pins as the new host-driven command/response bridge — a host `READ` command in flight could collide with an unsolicited auto-push, corrupting both.
+- Fix: removed the dedicated auto-push UART instances. `encrypted_channel.v`'s `ciphertext_out` and `tx_msg_counter_out` are now exposed as read-only registers (`CIPHERTEXT_DATA` 0x34, `TX_COUNTER` 0x38); the host explicitly reads them via the bridge instead of the chip pushing data unprompted.
+
+**Reset Synchronizer Body Bug — Closed**
+- Identified during this rewrite: although `reset_sync.v`'s output (`rst_sync`) was correctly used in every `always` block's sensitivity list (`posedge clk or posedge rst_sync`), the block *bodies* still checked the raw, unsynchronized `if (rst)` instead of `if (rst_sync)`. This silently bypassed the synchronizer's entire purpose — during the 2-cycle window after raw `rst` deasserted but before `rst_sync` released, clocked logic would incorrectly take the "normal operation" branch. Fixed by replacing all body-level `if (rst)` checks with `if (rst_sync)`.
+
+**Register-Read Timing Bug in `uart_to_reg_bridge.v` — Closed**
+- Identified: `reg_rdata` is a *registered* (one-cycle-delayed) output of `kavach_register_map.v`. The bridge's original `DO_READ` state pulsed `reg_read` and captured `reg_rdata` into the UART transmit buffer in the *same* cycle — one cycle too early — causing every UART read command to return the *previous* read's value rather than the one just requested. This was masked in an earlier standalone bridge test that used a combinationally-driven (non-registered) stand-in for `reg_rdata`; it was only caught once tested against the real, registered `kavach_register_map.v`. Fixed by adding two additional FSM states (`READ_WAIT`, `READ_CAP`) that give the register map one clock cycle to produce valid data before it is captured.
+
+**Full Re-Verification Over Realistic UART**
+- All top-level and module-integration testbenches were rewritten to drive and receive commands through actual `uart_tx.v`/`uart_rx.v` instances (not hand-timed bit-banging, which was found during this work to itself introduce race-condition false failures — see engineering note below).
+- `kavach_id_top_uart_tb.v`: 4/4 tests pass (BIST-via-UART, fresh-challenge authentication grant, replay detection/block, ciphertext register readback).
+- `offline_provenance_uart_tb.v`: 6/6 tests pass (initial budget, budget decrement, exhaustion/denial, sync-restore, correct-sequence provenance, skipped-stage violation).
+- `key_storage_uart_tb.v`: 3/3 tests pass (unprogrammed-start, program-and-lock, reject-second-write).
+- **13/13 tests pass overall**, fully driven and observed via the chip's actual 4-pin external interface — no internal parallel-bus shortcuts remain anywhere in the verification suite.
+
+**Engineering note — a hand-written UART bit-banger produced false failures**: during development, a testbench that manually toggled `uart_rx_in` bit-by-bit (rather than instantiating `uart_tx.v`) produced consistent, structured data corruption (e.g. sending `0x01` and observing `0x80` received). This was traced to a signal-assignment race condition in the hand-written task (no settling delay after each bit change) rather than any RTL defect; confirmed via a direct `uart_tx`-to-`uart_rx` loopback test, which passed cleanly. All hand-bit-banged bridge tests were subsequently rewritten to drive/receive through the real, proven UART modules.
+
+### Updated External Interface
+Kavach-ID now exposes exactly 6 external signals: `clk`, `rst`, `uart_rx_in`, `uart_tx_out`, `chip_healthy`, `verification_blocked` — down from ~57 in the pre-Rev-5.3 design.
