@@ -52,16 +52,18 @@ module uart_to_reg_bridge (
     );
 
     // ── Frame assembly FSM ──
-    localparam RX_CMD   = 3'd0,
-               RX_ADDR  = 3'd1,
-               RX_D3    = 3'd2,
-               RX_D2    = 3'd3,
-               RX_D1    = 3'd4,
-               RX_D0    = 3'd5,
-               DO_WRITE = 3'd6,
-               DO_READ  = 3'd7;
+    localparam RX_CMD     = 4'd0,
+               RX_ADDR    = 4'd1,
+               RX_D3      = 4'd2,
+               RX_D2      = 4'd3,
+               RX_D1      = 4'd4,
+               RX_D0      = 4'd5,
+               DO_WRITE   = 4'd6,
+               DO_READ    = 4'd7,
+               READ_WAIT  = 4'd8,
+               READ_CAP   = 4'd9;
 
-    reg [2:0]  state;
+    reg [3:0]  state;
     reg [7:0]  cmd_reg;
     reg [7:0]  addr_reg;
     reg [31:0] data_reg;
@@ -110,11 +112,26 @@ module uart_to_reg_bridge (
                     state     <= RX_CMD;
                 end
 
+                // FIX: reg_rdata is a REGISTERED output of kavach_register_map -
+                // it only becomes valid ONE CYCLE AFTER reg_read has been sampled
+                // high at a clock edge. The original code captured reg_rdata into
+                // tx_shift in the SAME cycle reg_read was first driven, reading a
+                // stale (previous-read's) value. Fixed with two extra states:
+                // DO_READ pulses reg_read; READ_WAIT gives the register map one
+                // cycle to see reg_read=1 and begin producing reg_rdata; READ_CAP
+                // captures the now-valid reg_rdata.
                 DO_READ: begin
                     reg_addr <= addr_reg;
                     reg_read <= 1'b1;
-                    state    <= RX_CMD; // reg_rdata sampled combinationally below into tx_shift
-                    tx_shift <= reg_rdata; // NOTE: valid the cycle after reg_read pulses, see testbench
+                    state    <= READ_WAIT;
+                end
+                READ_WAIT: begin
+                    reg_read <= 1'b0;
+                    state    <= READ_CAP;
+                end
+                READ_CAP: begin
+                    tx_shift <= reg_rdata;
+                    state    <= RX_CMD;
                     if (tx_state == TX_IDLE) begin
                         tx_data  <= reg_rdata[31:24];
                         tx_start <= 1'b1;

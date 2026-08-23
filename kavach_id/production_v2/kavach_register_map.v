@@ -40,7 +40,11 @@ module kavach_register_map(
     // ── NEW: per-chip key programming interface ──
     input  wire         key_locked_i,
     output reg          prog_enable_o,
-    output reg  [31:0]  prog_key_in_o
+    output reg  [31:0]  prog_key_in_o,
+
+    // ── NEW: encrypted response readback (replaces auto-push UART) ──
+    input  wire [31:0]  ciphertext_i,
+    input  wire [15:0]  tx_counter_i
 );
     // ── REGISTER MAP ──
     // 0x00: CONTROL (write) - bit0=bist_start, bit1=stabilizer_start,
@@ -77,6 +81,8 @@ module kavach_register_map(
     parameter ADDR_KEY_DATA    = 8'h28;
     parameter ADDR_KEY_CONTROL = 8'h2C;
     parameter ADDR_KEY_STATUS  = 8'h30;
+    parameter ADDR_CIPHERTEXT  = 8'h34;
+    parameter ADDR_TX_COUNTER  = 8'h38;
     parameter ADDR_CHIP_ID     = 8'hFC;
 
     always @(posedge clk or posedge rst) begin
@@ -142,6 +148,8 @@ module kavach_register_map(
                                     sync_required_i,
                                     offline_budget_i};
                     ADDR_OFFLINE_USES: reg_rdata <= {16'b0, total_offline_uses_i};
+                    ADDR_CIPHERTEXT: reg_rdata <= ciphertext_i;
+                    ADDR_TX_COUNTER:  reg_rdata <= {16'b0, tx_counter_i};
                     ADDR_KEY_STATUS: reg_rdata <= {31'b0, key_locked_i};
                     ADDR_CHIP_ID:   reg_rdata <= 32'h4B415641; // "KAVA" hex
                     default:        reg_rdata <= 32'h0;

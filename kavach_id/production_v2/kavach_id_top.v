@@ -2,13 +2,6 @@ module kavach_id_top(
     input  wire         clk,
     input  wire         rst,
 
-    input  wire         reg_write,
-    input  wire         reg_read,
-    input  wire [7:0]   reg_addr,
-    input  wire [31:0]  reg_wdata,
-    output wire [31:0]  reg_rdata,
-    output wire          reg_ready,
-
     input  wire         uart_rx_in,
     output wire         uart_tx_out,
 
@@ -17,15 +10,36 @@ module kavach_id_top(
 );
 
     // ── RESET SYNCHRONIZER (hardening fix) ──
-    // See reset_sync.v for full rationale: async-assert, sync-deassert,
-    // guarantees every flop in this design sees reset release on the
-    // same clock edge, eliminating a reset-recovery/removal hazard that
-    // is invisible in RTL simulation but real on fabricated silicon.
     wire rst_sync;
     reset_sync RESET_SYNC (
         .clk(clk),
         .rst_in(rst),
         .rst_out(rst_sync)
+    );
+
+    // ═══════════════════════════════════════════
+    // 0. UART-TO-REGISTER BRIDGE (interface hardening fix)
+    // FIX: kavach_id_top.v previously exposed its internal parallel
+    // register bus (reg_write/reg_read/reg_addr[7:0]/reg_wdata[31:0]/
+    // reg_rdata[31:0]/reg_ready - ~50 pins) directly as TOP-LEVEL CHIP
+    // PINS. No realistic reader device or phone can wire to a ~50-pin
+    // parallel bus. This bridge moves the register bus fully INSIDE
+    // the chip: externally, only clk/rst/uart_rx_in/uart_tx_out are
+    // exposed. See uart_to_reg_bridge.v for the 6-byte frame protocol.
+    // ═══════════════════════════════════════════
+    wire         reg_write, reg_read;
+    wire [7:0]   reg_addr;
+    wire [31:0]  reg_wdata;
+    wire [31:0]  reg_rdata;
+    wire         reg_ready;
+
+    uart_to_reg_bridge BRIDGE (
+        .clk(clk), .rst(rst_sync),
+        .uart_rx_in(uart_rx_in),
+        .uart_tx_out(uart_tx_out),
+        .reg_write(reg_write), .reg_read(reg_read),
+        .reg_addr(reg_addr), .reg_wdata(reg_wdata),
+        .reg_rdata(reg_rdata), .reg_ready(reg_ready)
     );
 
     // ═══════════════════════════════════════════
@@ -35,8 +49,8 @@ module kavach_id_top(
     reg          auth_request_prev;
     wire         auth_request_pulse;
     always @(posedge clk or posedge rst_sync) begin
-        if (rst) auth_request_prev <= 0;
-        else     auth_request_prev <= auth_request_o;
+        if (rst_sync) auth_request_prev <= 0;
+        else          auth_request_prev <= auth_request_o;
     end
     assign auth_request_pulse = auth_request_o & ~auth_request_prev;
     wire         sync_complete_o, record_stage_o;
@@ -58,7 +72,7 @@ module kavach_id_top(
     reg auth_denied_budget_i;
 
     always @(posedge clk or posedge rst_sync) begin
-        if (rst) begin
+        if (rst_sync) begin
             bist_pass_i <= 0;
             bist_fail_i <= 0;
         end
@@ -78,7 +92,7 @@ module kavach_id_top(
     wire budget_denial_this_cycle = auth_grant_raw & ~verify_allowed_i;
 
     always @(posedge clk or posedge rst_sync) begin
-        if (rst) begin
+        if (rst_sync) begin
             authentication_grant_i <= 0;
             auth_denied_bist_i     <= 0;
             auth_denied_replay_i   <= 0;
@@ -101,10 +115,6 @@ module kavach_id_top(
     end
 
     // ── PER-CHIP KEY STORAGE (hardening fix) ──
-    // See key_storage.v for full rationale: replaces the previously
-    // hardcoded 32'hDEADBEEF shared_key (identical across every chip
-    // built from this design) with a factory-programmable, write-once
-    // per-chip key.
     wire         prog_enable_w;
     wire [31:0]  prog_key_in_w;
     wire         key_locked_w;
@@ -146,7 +156,9 @@ module kavach_id_top(
         .stage_data_o(stage_data_o),
         .key_locked_i(key_locked_w),
         .prog_enable_o(prog_enable_w),
-        .prog_key_in_o(prog_key_in_w)
+        .prog_key_in_o(prog_key_in_w),
+        .ciphertext_i(ciphertext_out),
+        .tx_counter_i(tx_msg_counter_out)
     );
 
     // ═══════════════════════════════════════════
@@ -166,21 +178,6 @@ module kavach_id_top(
 
     // ═══════════════════════════════════════════
     // 3. PUF ARRAY + RESAMPLE CONTROLLER
-    // FIX: puf_array was previously pulsed ONCE and its single response
-    // fed to all three puf_stabilizer inputs, making majority-voting a
-    // no-op at chip level (documented as a known limitation in README).
-    // This controller pulses the PUF array three separate times in
-    // sequence, latching each result into an independent sample
-    // register, so puf_stabilizer receives three genuinely distinct
-    // reads matching its own (already formally-verified) interface.
-    // SCOPE NOTE: in RTL/Icarus behavioral simulation, arbiter_puf_cell's
-    // buf-chain delay paths have zero simulated delay, so all three
-    // reads will be bit-identical here regardless of this fix - this
-    // corrects the ARCHITECTURE (three independent reads instead of one
-    // read reused three times), not the simulator's ability to model
-    // real silicon timing jitter. Genuine noise-correction behavior can
-    // only be observed on fabricated silicon or via SDF-annotated
-    // post-synthesis timing simulation.
     // ═══════════════════════════════════════════
     wire [31:0] puf_response;
     reg         puf_pulse;
@@ -200,7 +197,7 @@ module kavach_id_top(
     );
 
     always @(posedge clk or posedge rst_sync) begin
-        if (rst) begin
+        if (rst_sync) begin
             rs_state          <= RS_IDLE;
             puf_pulse         <= 1'b0;
             puf_sample_1      <= 32'd0;
@@ -237,8 +234,6 @@ module kavach_id_top(
 
     // ═══════════════════════════════════════════
     // 4. PUF STABILIZER
-    // Now driven by three genuinely independent resampled reads
-    // (see resample controller above), not one value reused three times.
     // ═══════════════════════════════════════════
     wire stable_done;
 
@@ -322,6 +317,14 @@ module kavach_id_top(
 
     // ═══════════════════════════════════════════
     // 10. ENCRYPTED CHANNEL
+    // FIX: previously drove a dedicated, always-listening UART_TX that
+    // auto-pushed ciphertext on every successful authentication - this
+    // conflicted with the host-driven command/response protocol on the
+    // SAME physical uart_tx_out pin (see bridge above). The channel's
+    // ciphertext_out/tx_msg_counter_out are now exposed as read-only
+    // registers (CIPHERTEXT_DATA 0x34, TX_COUNTER 0x38); the host
+    // explicitly reads them via the bridge instead of the chip pushing
+    // unsolicited data that could collide with an in-flight command.
     // ═══════════════════════════════════════════
     wire [31:0] ciphertext_out;
     wire        encrypt_done;
@@ -343,78 +346,6 @@ module kavach_id_top(
         .session_nonce_out(session_nonce_unused),
         .tx_msg_counter_out(tx_msg_counter_out)
     );
-
-    // ═══════════════════════════════════════════
-    // 11. UART TX — full 32-bit response, 4 bytes
-    // ═══════════════════════════════════════════
-    localparam TX_IDLE = 2'd0, TX_B1 = 2'd1, TX_B2 = 2'd2, TX_B3 = 2'd3;
-    reg [1:0]  tx_state;
-    reg [31:0] tx_shift_reg;
-    reg        uart_start;
-    reg [7:0]  uart_data;
-    wire       uart_busy;
-
-    uart_tx UART_TX (
-        .clk(clk), .rst(rst_sync),
-        .tx_start(uart_start),
-        .data_in(uart_data),
-        .tx_out(uart_tx_out),
-        .tx_busy(uart_busy)
-    );
-
-    wire [7:0] rx_data_unused;
-    wire       rx_valid_unused;
-
-    uart_rx UART_RX (
-        .clk(clk), .rst(rst_sync),
-        .rx_in(uart_rx_in),
-        .data_out(rx_data_unused),
-        .data_valid(rx_valid_unused)
-    );
-
-    always @(posedge clk or posedge rst_sync) begin
-        if (rst) begin
-            tx_state     <= TX_IDLE;
-            tx_shift_reg <= 32'd0;
-            uart_start   <= 1'b0;
-            uart_data    <= 8'd0;
-        end
-        else begin
-            uart_start <= 1'b0;
-            case (tx_state)
-                TX_IDLE: begin
-                    if (encrypt_done & authentication_grant_i) begin
-                        tx_shift_reg <= ciphertext_out;
-                        uart_data    <= ciphertext_out[31:24];
-                        uart_start   <= 1'b1;
-                        tx_state     <= TX_B1;
-                    end
-                end
-                TX_B1: begin
-                    if (!uart_busy && !uart_start) begin
-                        uart_data  <= tx_shift_reg[23:16];
-                        uart_start <= 1'b1;
-                        tx_state   <= TX_B2;
-                    end
-                end
-                TX_B2: begin
-                    if (!uart_busy && !uart_start) begin
-                        uart_data  <= tx_shift_reg[15:8];
-                        uart_start <= 1'b1;
-                        tx_state   <= TX_B3;
-                    end
-                end
-                TX_B3: begin
-                    if (!uart_busy && !uart_start) begin
-                        uart_data  <= tx_shift_reg[7:0];
-                        uart_start <= 1'b1;
-                        tx_state   <= TX_IDLE;
-                    end
-                end
-                default: tx_state <= TX_IDLE;
-            endcase
-        end
-    end
 
     // ═══════════════════════════════════════════
     // TOP-LEVEL STATUS
