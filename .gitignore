@@ -31,3 +31,4 @@
 **/*_sim
 **/debug_sim*
 synchk
+**/__pycache__/
