@@ -26,7 +26,7 @@ module offline_provenance_uart_tb;
     );
 
     kavach_id_top DUT (
-        .clk(clk), .rst(rst),
+        .clk(clk), .clk_sel(1'b0), .rst(rst),
         .uart_rx_in(uart_link),
         .uart_tx_out(uart_from_chip),
         .chip_healthy(chip_healthy),
@@ -87,7 +87,7 @@ module offline_provenance_uart_tb;
 
     initial begin
         rst = 1; host_tx_start = 0; host_tx_data = 0;
-        #20; rst = 0; #40;
+        #20; rst = 0; #150; // extra margin for POR_CYCLES (8) hold + reset_sync 2-cycle release
 
         $display("================================================");
         $display("  OFFLINE-VERIFY BUDGET + PROVENANCE (via UART)");
@@ -175,7 +175,7 @@ module offline_provenance_uart_tb;
             $display("FAIL");
 
         $display("--- TEST F: Provenance chain - skipped stage triggers violation ---");
-        rst = 1; #20; rst = 0; #40; // fresh chip
+        rst = 1; #20; rst = 0; #150; // extra margin for POR_CYCLES (8) hold + reset_sync 2-cycle release // fresh chip
 
         reg_write_uart(8'h14, 32'h0000_0000); reg_write_uart(8'h18, 32'h1111_0000);
         reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);

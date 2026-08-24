@@ -28,7 +28,7 @@ module kavach_id_top_uart_tb;
     );
 
     kavach_id_top DUT (
-        .clk(clk), .rst(rst),
+        .clk(clk), .clk_sel(1'b0), .rst(rst),
         .uart_rx_in(uart_link),
         .uart_tx_out(uart_from_chip),
         .chip_healthy(chip_healthy),
@@ -88,7 +88,7 @@ module kavach_id_top_uart_tb;
 
     initial begin
         rst = 1; host_tx_start = 0; host_tx_data = 0;
-        #20; rst = 0; #40; // extra margin for reset_sync's 2-cycle release
+        #20; rst = 0; #150; // extra margin for POR_CYCLES (8) hold + reset_sync 2-cycle release // extra margin for reset_sync's 2-cycle release
 
         $display("================================================");
         $display("  KAVACH-ID TOP-LEVEL UART-PROTOCOL INTEGRATION");
