@@ -59,6 +59,20 @@ module key_storage_uart_tb;
         end
     endtask
 
+    // NEW: loads a full 128-bit key across 4 sequential KEY_DATA
+    // (0x28) writes, MSB word first, matching kavach_register_map.v's
+    // 4-word shift-register protocol - a single KEY_DATA write is no
+    // longer sufficient to arm KEY_CONTROL.
+    task program_key_uart(input [127:0] key);
+        begin
+            reg_write_uart(8'h28, key[127:96]);
+            reg_write_uart(8'h28, key[95:64]);
+            reg_write_uart(8'h28, key[63:32]);
+            reg_write_uart(8'h28, key[31:0]);
+            reg_write_uart(8'h2C, 32'h0000_0001); // KEY_CONTROL bit0 = attempt lock
+        end
+    endtask
+
     reg [31:0] read_result;
     integer    read_byte_count;
 
@@ -88,7 +102,7 @@ module key_storage_uart_tb;
         #20; rst = 0; #150; // extra margin for POR_CYCLES (8) hold + reset_sync 2-cycle release
 
         $display("================================================");
-        $display("  PER-CHIP KEY STORAGE TESTS (via UART)");
+        $display("  PER-CHIP KEY STORAGE TESTS (via UART, 128-bit)");
         $display("================================================");
 
         $display("--- TEST A: Key starts unprogrammed (key_locked = 0) ---");
@@ -99,26 +113,45 @@ module key_storage_uart_tb;
         else
             $display("FAIL");
 
-        $display("--- TEST B: Program a key, confirm it locks ---");
-        reg_write_uart(8'h28, 32'hCAFEF00D); // KEY_DATA
-        reg_write_uart(8'h2C, 32'h0000_0001); // KEY_CONTROL bit0 = prog_enable
+        $display("--- TEST B: Program a full 128-bit key across 4 words, confirm it locks ---");
+        program_key_uart(128'hCAFEF00D_11223344_55667788_9ABCDEF0);
         repeat (10) @(posedge clk);
         reg_read_uart(8'h30);
-        $display("KEY_STATUS=0x%0h (expect bit0=1)", read_result);
+        $display("KEY_STATUS=0x%0h (expect bit0=1, bit[3:1] word_count=0)", read_result);
         if (read_result[0] == 1)
             $display("PASS: key is now locked");
         else
             $display("FAIL");
+        $display("chip_key internal value = 0x%032h", DUT.chip_key_w);
+        if (DUT.chip_key_w == 128'hCAFEF00D1122334455667788_9ABCDEF0)
+            $display("PASS: full 128-bit key correctly assembled and stored");
+        else
+            $display("FAIL: chip_key_w mismatch");
 
-        $display("--- TEST C: Attempt to reprogram - must be rejected ---");
-        reg_write_uart(8'h28, 32'hDEADBEEF); // try a DIFFERENT key
-        reg_write_uart(8'h2C, 32'h0000_0001); // try to re-trigger prog_enable
+        $display("--- TEST C: Attempt to reprogram with a DIFFERENT full key - must be rejected ---");
+        program_key_uart(128'hDEADBEEF_DEADBEEF_DEADBEEF_DEADBEEF);
         repeat (10) @(posedge clk);
-        $display("chip_key internal value = 0x%0h (expect still 0xCAFEF00D)", DUT.chip_key_w);
-        if (DUT.chip_key_w == 32'hCAFEF00D)
-            $display("PASS: second programming attempt correctly rejected, original key preserved");
+        $display("chip_key internal value = 0x%032h (expect still original key)", DUT.chip_key_w);
+        if (DUT.chip_key_w == 128'hCAFEF00D1122334455667788_9ABCDEF0)
+            $display("PASS: second full-key programming attempt correctly rejected, original key preserved");
         else
             $display("FAIL: SECURITY BUG - key was overwritten after lock");
+
+        $display("--- TEST D: Partial load (only 2 of 4 words) does not arm KEY_CONTROL ---");
+        // Uses a THIRD distinct key value, sent incomplete, against an
+        // already-locked chip - this exercises the word_count reset
+        // path even though the lock itself would independently block
+        // it; documents that partial loads are rejected before lock
+        // enforcement is even reached.
+        reg_write_uart(8'h28, 32'h11111111);
+        reg_write_uart(8'h28, 32'h22222222);
+        reg_write_uart(8'h2C, 32'h0000_0001);
+        repeat (10) @(posedge clk);
+        $display("chip_key internal value = 0x%032h (expect unchanged)", DUT.chip_key_w);
+        if (DUT.chip_key_w == 128'hCAFEF00D1122334455667788_9ABCDEF0)
+            $display("PASS: partial load did not disturb the locked key");
+        else
+            $display("FAIL: partial load unexpectedly changed chip_key_w");
 
         $display("================================================");
         $display("Key storage tests (UART) complete");

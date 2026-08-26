@@ -18,12 +18,10 @@ module kavach_register_map(
     input  wire         auth_denied_bist_i,
     input  wire         auth_denied_replay_i,
 
-    // NEW: provenance chain status
     input  wire         sequence_violation_i,
     input  wire         chain_complete_i,
     input  wire [3:0]   stages_completed_i,
 
-    // NEW: offline verification budget status
     input  wire [7:0]   offline_budget_i,
     input  wire         sync_required_i,
     input  wire [15:0]  total_offline_uses_i,
@@ -32,17 +30,23 @@ module kavach_register_map(
     output reg          stabilizer_start_o,
     output reg  [31:0]  challenge_o,
     output reg          auth_request_o,
-    output reg          sync_complete_o,   // NEW
-    output reg          record_stage_o,    // NEW
-    output reg  [1:0]   stage_id_o,        // NEW
-    output reg  [31:0]  stage_data_o,      // NEW
+    output reg          sync_complete_o,
+    output reg          record_stage_o,
+    output reg  [1:0]   stage_id_o,
+    output reg  [31:0]  stage_data_o,
 
-    // ── NEW: per-chip key programming interface ──
+    // ── per-chip key programming interface ──
+    // WIDENED: prog_key_in_o now 128 bits (was 32), loaded across 4
+    // sequential ADDR_KEY_DATA writes (MSB word first) into a shift
+    // register, tracked by key_word_count. ADDR_KEY_CONTROL only
+    // forwards prog_enable_o if all 4 words have landed; either way
+    // key_word_count resets to 0 after a KEY_CONTROL write, forcing a
+    // full 4-word resend on any retry rather than allowing a silently
+    // partial key load.
     input  wire         key_locked_i,
     output reg          prog_enable_o,
-    output reg  [31:0]  prog_key_in_o,
+    output reg  [127:0] prog_key_in_o,
 
-    // ── NEW: encrypted response readback (replaces auto-push UART) ──
     input  wire [31:0]  ciphertext_i,
     input  wire [15:0]  tx_counter_i
 );
@@ -66,6 +70,17 @@ module kavach_register_map(
     // 0x20: OFFLINE_STATUS (read) - bits[7:0]=offline_budget,
     //                                bit8=sync_required
     // 0x24: OFFLINE_USES (read) - bits[15:0]=total_offline_uses
+    // 0x28: KEY_DATA (write) - write 4 TIMES (MSB word first) to load
+    //                          one 128-bit key into the shift register
+    // 0x2C: KEY_CONTROL (write) - bit0=1 attempts to lock the key;
+    //                              only takes effect if exactly 4
+    //                              KEY_DATA words were written first
+    // 0x30: KEY_STATUS (read) - bit0=key_locked,
+    //                            bits[3:1]=key_word_count (0-4,
+    //                            words received since last KEY_CONTROL
+    //                            write or reset)
+    // 0x34: CIPHERTEXT_DATA (read)
+    // 0x38: TX_COUNTER (read)
     // 0xFC: CHIP_ID (read)
 
     parameter ADDR_CONTROL     = 8'h00;
@@ -85,6 +100,8 @@ module kavach_register_map(
     parameter ADDR_TX_COUNTER  = 8'h38;
     parameter ADDR_CHIP_ID     = 8'hFC;
 
+    reg [2:0] key_word_count; // 0-4: words received since last KEY_CONTROL/reset
+
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             reg_rdata           <= 0;
@@ -99,6 +116,7 @@ module kavach_register_map(
             stage_data_o         <= 0;
             prog_enable_o        <= 0;
             prog_key_in_o        <= 0;
+            key_word_count       <= 0;
         end
         else begin
             reg_ready            <= 0;
@@ -122,8 +140,18 @@ module kavach_register_map(
                     ADDR_CHALLENGE:  challenge_o  <= reg_wdata;
                     ADDR_STAGE_ID:   stage_id_o   <= reg_wdata[1:0];
                     ADDR_STAGE_DATA: stage_data_o <= reg_wdata;
-                    ADDR_KEY_DATA:    prog_key_in_o <= reg_wdata;
-                    ADDR_KEY_CONTROL: prog_enable_o <= reg_wdata[0];
+                    ADDR_KEY_DATA: begin
+                        prog_key_in_o <= {prog_key_in_o[95:0], reg_wdata};
+                        if (key_word_count < 3'd4)
+                            key_word_count <= key_word_count + 1'b1;
+                    end
+                    ADDR_KEY_CONTROL: begin
+                        prog_enable_o  <= reg_wdata[0] & (key_word_count == 3'd4);
+                        key_word_count <= 3'd0; // always reset - forces full
+                                                  // 4-word resend on retry,
+                                                  // never leaves a partial
+                                                  // load pending
+                    end
                     default: ;
                 endcase
             end
@@ -150,7 +178,7 @@ module kavach_register_map(
                     ADDR_OFFLINE_USES: reg_rdata <= {16'b0, total_offline_uses_i};
                     ADDR_CIPHERTEXT: reg_rdata <= ciphertext_i;
                     ADDR_TX_COUNTER:  reg_rdata <= {16'b0, tx_counter_i};
-                    ADDR_KEY_STATUS: reg_rdata <= {31'b0, key_locked_i};
+                    ADDR_KEY_STATUS: reg_rdata <= {27'b0, key_word_count, key_locked_i};
                     ADDR_CHIP_ID:   reg_rdata <= 32'h4B415641; // "KAVA" hex
                     default:        reg_rdata <= 32'h0;
                 endcase

@@ -143,9 +143,9 @@ module kavach_id_top(
 
     // ── PER-CHIP KEY STORAGE (hardening fix) ──
     wire         prog_enable_w;
-    wire [31:0]  prog_key_in_w;
+    wire [127:0] prog_key_in_w;
     wire         key_locked_w;
-    wire [31:0]  chip_key_w;
+    wire [127:0] chip_key_w;
 
     key_storage KEYSTORE (
         .clk(int_clk), .rst(rst_sync),
