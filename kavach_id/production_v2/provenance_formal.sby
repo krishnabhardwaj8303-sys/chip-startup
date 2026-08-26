@@ -1,15 +1,17 @@
 [options]
 mode bmc
-depth 15
+depth 10
 
 [engines]
 smtbmc z3
 
 [script]
 read -formal provenance_chain.v
+read -formal sha256_core.v
 read -formal provenance_formal.sv
 prep -top provenance_formal
 
 [files]
 provenance_chain.v
+sha256_core.v
 provenance_formal.sv
