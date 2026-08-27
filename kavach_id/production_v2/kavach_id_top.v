@@ -1,7 +1,7 @@
 module kavach_id_top(
-    input  wire         clk,        // external clock (bench/lab testing)
-    input  wire         rst,        // external reset (optional; POR also generates one internally)
-    input  wire         clk_sel,    // 0 = use external clk, 1 = use internal ring_oscillator (deployed/passive operation)
+    input  wire         clk,
+    input  wire         rst,
+    input  wire         clk_sel,
 
     input  wire         uart_rx_in,
     output wire         uart_tx_out,
@@ -10,25 +10,13 @@ module kavach_id_top(
     output wire          verification_blocked
 );
 
-    // ── CLOCK SOURCE SELECTION (deployment hardening) ──
-    // See ring_oscillator.v for full rationale: enables operation
-    // without any external crystal/clock source for deployed/passive
-    // (e.g. NFC-powered) use cases, while preserving external-clock
-    // capability for bench testing and characterization.
     wire osc_clk;
     ring_oscillator OSC (
-        .enable(1'b1),   // free-runs unconditionally; unused output when clk_sel=0
+        .enable(1'b1),
         .clk_out(osc_clk)
     );
     wire int_clk = clk_sel ? osc_clk : clk;
 
-    // ── POWER-ON-RESET (deployment hardening) ──
-    // See por_circuit.v for full rationale: guarantees the chip enters
-    // a known reset state purely from power arriving, with no
-    // dependency on an external reset signal (essential for deployed/
-    // passive operation where no host may be present at power-up to
-    // drive rst). ORed with the external rst so either source can
-    // trigger a reset.
     wire por_reset;
     por_circuit POR (
         .clk(int_clk),
@@ -36,7 +24,6 @@ module kavach_id_top(
     );
     wire combined_rst = rst | por_reset;
 
-    // ── RESET SYNCHRONIZER (hardening fix) ──
     wire rst_sync;
     reset_sync RESET_SYNC (
         .clk(int_clk),
@@ -45,14 +32,7 @@ module kavach_id_top(
     );
 
     // ═══════════════════════════════════════════
-    // 0. UART-TO-REGISTER BRIDGE (interface hardening fix)
-    // FIX: kavach_id_top.v previously exposed its internal parallel
-    // register bus (reg_write/reg_read/reg_addr[7:0]/reg_wdata[31:0]/
-    // reg_rdata[31:0]/reg_ready - ~50 pins) directly as TOP-LEVEL CHIP
-    // PINS. No realistic reader device or phone can wire to a ~50-pin
-    // parallel bus. This bridge moves the register bus fully INSIDE
-    // the chip: externally, only clk/rst/uart_rx_in/uart_tx_out are
-    // exposed. See uart_to_reg_bridge.v for the 6-byte frame protocol.
+    // 0. UART-TO-REGISTER BRIDGE
     // ═══════════════════════════════════════════
     wire         reg_write, reg_read;
     wire [7:0]   reg_addr;
@@ -94,6 +74,11 @@ module kavach_id_top(
     wire         sync_required_i, verify_allowed_i;
     wire [15:0]  total_offline_uses_i;
 
+    // ── NEW: PUF reliability-mask enrollment ──
+    wire         enroll_start_o;
+    wire         enroll_busy_w, enroll_done_w, mask_locked_w;
+    wire [31:0]  reliability_mask_w;
+
     // ── STICKY STATUS LATCHES ──
     reg bist_pass_i, bist_fail_i;
     reg authentication_grant_i, auth_denied_bist_i, auth_denied_replay_i;
@@ -116,25 +101,11 @@ module kavach_id_top(
         end
     end
 
-    // FIX: sequence_violation from provenance_chain.v is a single-cycle
-    // pulse (mirrors the original module's design - see
-    // provenance_chain.v). It was previously wired directly to the
-    // register map with no latch, so a host reading PROVENANCE_STATUS
-    // even a few cycles after the violation-detecting cycle would see
-    // it already cleared and incorrectly conclude no violation
-    // occurred - confirmed via offline_provenance_uart_tb.v's TEST F
-    // after provenance_chain.v's SHA-256 redesign (~120-cycle hash
-    // latency between record_stage and the status becoming stable)
-    // made this window impossible to hit by accident, whereas the
-    // prior XOR-hash version's near-combinational timing had
-    // apparently made this pass by coincidence in earlier testing.
-    // chain_complete does not need this fix: it is already latched
-    // inside provenance_chain.v itself (only cleared by reset).
     always @(posedge int_clk or posedge rst_sync) begin
         if (rst_sync)
             sequence_violation_i <= 1'b0;
         else if (record_stage_o)
-            sequence_violation_i <= 1'b0; // clear at the start of each new attempt
+            sequence_violation_i <= 1'b0;
         else if (sequence_violation_raw)
             sequence_violation_i <= 1'b1;
     end
@@ -165,7 +136,7 @@ module kavach_id_top(
         end
     end
 
-    // ── PER-CHIP KEY STORAGE (hardening fix) ──
+    // ── PER-CHIP KEY STORAGE ──
     wire         prog_enable_w;
     wire [127:0] prog_key_in_w;
     wire         key_locked_w;
@@ -209,7 +180,11 @@ module kavach_id_top(
         .prog_enable_o(prog_enable_w),
         .prog_key_in_o(prog_key_in_w),
         .ciphertext_i(ciphertext_out),
-        .tx_counter_i(tx_msg_counter_out)
+        .tx_counter_i(tx_msg_counter_out),
+        .enroll_start_o(enroll_start_o),
+        .enroll_busy_i(enroll_busy_w),
+        .mask_locked_i(mask_locked_w),
+        .reliability_mask_i(reliability_mask_w)
     );
 
     // ═══════════════════════════════════════════
@@ -229,7 +204,23 @@ module kavach_id_top(
 
     // ═══════════════════════════════════════════
     // 3. PUF ARRAY + RESAMPLE CONTROLLER
+    // FIX: extended to also drive PUF reads during reliability-mask
+    // enrollment (see section 4b below). enroll_active (aliased
+    // directly to puf_reliability_enroll's own enroll_busy output, no
+    // duplicate state) takes priority over the normal
+    // stabilizer_start_o-driven auth path in RS_IDLE, and during
+    // enrollment the PUF challenge input is switched to a FIXED
+    // reference challenge (ENROLL_REF_CHALLENGE) instead of the
+    // host-supplied challenge_o, so every enrollment round reads the
+    // SAME challenge (required - the whole point is to see whether
+    // the SAME challenge's response is consistent across rounds).
+    // Enrollment does not touch stabilizer_start_o/replay_detector at
+    // all, so it cannot interfere with or be interfered with by the
+    // normal authentication flow.
     // ═══════════════════════════════════════════
+    localparam [31:0] ENROLL_REF_CHALLENGE = 32'hE4B0110D;
+
+    wire        enroll_active = enroll_busy_w;
     wire [31:0] puf_response;
     reg         puf_pulse;
     reg  [31:0] puf_sample_1, puf_sample_2, puf_sample_3;
@@ -243,7 +234,7 @@ module kavach_id_top(
     puf_array PUF (
         .clk(int_clk), .rst(rst_sync),
         .pulse_in(puf_pulse),
-        .challenge(challenge_o),
+        .challenge(enroll_active ? ENROLL_REF_CHALLENGE : challenge_o),
         .response(puf_response)
     );
 
@@ -260,7 +251,11 @@ module kavach_id_top(
             puf_samples_ready <= 1'b0;
             case (rs_state)
                 RS_IDLE: begin
-                    if (stabilizer_start_o & ~replay_detected_i) begin
+                    if (enroll_active) begin
+                        puf_pulse <= 1'b1;
+                        rs_state  <= RS_P1;
+                    end
+                    else if (stabilizer_start_o & ~replay_detected_i) begin
                         puf_pulse <= 1'b1;
                         rs_state  <= RS_P1;
                     end
@@ -301,13 +296,41 @@ module kavach_id_top(
     );
 
     // ═══════════════════════════════════════════
-    // 5. SCRAMBLER
+    // 4b. PUF RELIABILITY-MASK ENROLLMENT (NEW)
+    // Consumes each stabilized read produced during enrollment
+    // (gated by enroll_active, so normal-flow stable_done pulses are
+    // correctly ignored). See puf_reliability_enroll.v for the full
+    // design rationale and puf_stabilizer.v for the cross-read-attempt
+    // instability this addresses.
     // ═══════════════════════════════════════════
+    wire enroll_stable_valid = stable_done & enroll_active;
+
+    puf_reliability_enroll #(.ENROLL_ROUNDS(4'd8)) RELMASK (
+        .clk(int_clk), .rst(rst_sync),
+        .enroll_start(enroll_start_o),
+        .stable_sample_valid(enroll_stable_valid),
+        .stable_sample(stable_response_i),
+        .enroll_busy(enroll_busy_w),
+        .enroll_done(enroll_done_w),
+        .reliability_mask(reliability_mask_w),
+        .mask_locked(mask_locked_w)
+    );
+
+    // ═══════════════════════════════════════════
+    // 5. SCRAMBLER
+    // FIX: raw_response now receives the RELIABILITY-MASKED stabilized
+    // response (chronically-unstable bits forced to 0) instead of the
+    // raw stable_response_i, so authentication is not affected by
+    // near-tie bits that vary across separate read-attempts. Before
+    // enrollment (or on a chip that is never enrolled), reliability_mask_w
+    // is 0 and this is a no-op - fully backward compatible.
+    // ═══════════════════════════════════════════
+    wire [31:0] masked_stable_response = stable_response_i & ~reliability_mask_w;
     wire [31:0] scrambled_response;
 
     scrambler SCRAM (
         .challenge(challenge_o),
-        .raw_response(stable_response_i),
+        .raw_response(masked_stable_response),
         .scrambled_response(scrambled_response)
     );
 
@@ -368,14 +391,6 @@ module kavach_id_top(
 
     // ═══════════════════════════════════════════
     // 10. ENCRYPTED CHANNEL
-    // FIX: previously drove a dedicated, always-listening UART_TX that
-    // auto-pushed ciphertext on every successful authentication - this
-    // conflicted with the host-driven command/response protocol on the
-    // SAME physical uart_tx_out pin (see bridge above). The channel's
-    // ciphertext_out/tx_msg_counter_out are now exposed as read-only
-    // registers (CIPHERTEXT_DATA 0x34, TX_COUNTER 0x38); the host
-    // explicitly reads them via the bridge instead of the chip pushing
-    // unsolicited data that could collide with an in-flight command.
     // ═══════════════════════════════════════════
     wire [31:0] ciphertext_out;
     wire        encrypt_done;
