@@ -87,7 +87,8 @@ module kavach_id_top(
     wire [31:0]  stable_response_i;
     wire [5:0]   unstable_bit_count_i;
     wire         auth_grant_raw, auth_denied_bist_raw, auth_denied_replay_raw;
-    wire         sequence_violation_i, chain_complete_i;
+    wire         sequence_violation_raw, chain_complete_i;
+    reg          sequence_violation_i;
     wire [3:0]   stages_completed_i;
     wire [7:0]   offline_budget_i;
     wire         sync_required_i, verify_allowed_i;
@@ -113,6 +114,29 @@ module kavach_id_top(
                 if (bist_fail_raw) bist_fail_i <= 1;
             end
         end
+    end
+
+    // FIX: sequence_violation from provenance_chain.v is a single-cycle
+    // pulse (mirrors the original module's design - see
+    // provenance_chain.v). It was previously wired directly to the
+    // register map with no latch, so a host reading PROVENANCE_STATUS
+    // even a few cycles after the violation-detecting cycle would see
+    // it already cleared and incorrectly conclude no violation
+    // occurred - confirmed via offline_provenance_uart_tb.v's TEST F
+    // after provenance_chain.v's SHA-256 redesign (~120-cycle hash
+    // latency between record_stage and the status becoming stable)
+    // made this window impossible to hit by accident, whereas the
+    // prior XOR-hash version's near-combinational timing had
+    // apparently made this pass by coincidence in earlier testing.
+    // chain_complete does not need this fix: it is already latched
+    // inside provenance_chain.v itself (only cleared by reset).
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync)
+            sequence_violation_i <= 1'b0;
+        else if (record_stage_o)
+            sequence_violation_i <= 1'b0; // clear at the start of each new attempt
+        else if (sequence_violation_raw)
+            sequence_violation_i <= 1'b1;
     end
 
     wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i;
@@ -338,7 +362,7 @@ module kavach_id_top(
         .stage_data(stage_data_o),
         .chain_hash(),
         .stages_completed(stages_completed_i),
-        .sequence_violation(sequence_violation_i),
+        .sequence_violation(sequence_violation_raw),
         .chain_complete(chain_complete_i)
     );
 

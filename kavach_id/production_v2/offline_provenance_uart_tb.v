@@ -156,16 +156,16 @@ module offline_provenance_uart_tb;
 
         $display("--- TEST E: Provenance chain - correct sequence completes cleanly ---");
         reg_write_uart(8'h14, 32'h0000_0000); reg_write_uart(8'h18, 32'hAAAA_0000);
-        reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);
+        reg_write_uart(8'h00, 32'h0000_0010); repeat (150) @(posedge clk);
 
         reg_write_uart(8'h14, 32'h0000_0001); reg_write_uart(8'h18, 32'hBBBB_0000);
-        reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);
+        reg_write_uart(8'h00, 32'h0000_0010); repeat (150) @(posedge clk);
 
         reg_write_uart(8'h14, 32'h0000_0002); reg_write_uart(8'h18, 32'hCCCC_0000);
-        reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);
+        reg_write_uart(8'h00, 32'h0000_0010); repeat (150) @(posedge clk);
 
         reg_write_uart(8'h14, 32'h0000_0003); reg_write_uart(8'h18, 32'hDDDD_0000);
-        reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);
+        reg_write_uart(8'h00, 32'h0000_0010); repeat (150) @(posedge clk);
 
         reg_read_uart(8'h1C); // PROVENANCE_STATUS
         $display("PROVENANCE_STATUS=0x%0h (bit0=violation, bit1=chain_complete)", read_result);
@@ -178,10 +178,10 @@ module offline_provenance_uart_tb;
         rst = 1; #20; rst = 0; #150; // extra margin for POR_CYCLES (8) hold + reset_sync 2-cycle release // fresh chip
 
         reg_write_uart(8'h14, 32'h0000_0000); reg_write_uart(8'h18, 32'h1111_0000);
-        reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);
+        reg_write_uart(8'h00, 32'h0000_0010); repeat (150) @(posedge clk);
 
         reg_write_uart(8'h14, 32'h0000_0003); reg_write_uart(8'h18, 32'h2222_0000);
-        reg_write_uart(8'h00, 32'h0000_0010); repeat (10) @(posedge clk);
+        reg_write_uart(8'h00, 32'h0000_0010); repeat (150) @(posedge clk);
 
         reg_read_uart(8'h1C);
         $display("PROVENANCE_STATUS=0x%0h", read_result);
