@@ -49,7 +49,18 @@ module kavach_register_map(
     output reg          enroll_start_o,
     input  wire         enroll_busy_i,
     input  wire         mask_locked_i,
-    input  wire [31:0]  reliability_mask_i
+    input  wire [31:0]  reliability_mask_i,
+
+    // ── NEW: Layer 1 binding-certificate interface ──
+    output reg  [31:0]  board_id_live_o,
+    output reg  [127:0] binding_key_in_o,
+    output reg           binding_key_prog_en_o,
+    output reg  [255:0] cert_mac_in_o,
+    output reg           cert_program_en_o,
+    output reg           verify_start_o,
+    input  wire          cert_programmed_i,
+    input  wire          binding_valid_i,
+    input  wire          verify_busy_i
 );
     // ── REGISTER MAP ──
     // 0x00: CONTROL (write) - bit0=bist_start, bit1=stabilizer_start,
@@ -105,10 +116,18 @@ module kavach_register_map(
     parameter ADDR_MASK_STATUS = 8'h44;
     parameter ADDR_HASH_SELECT = 8'h48;
     parameter ADDR_HASH_WORD   = 8'h4C;
+    parameter ADDR_BOARD_ID           = 8'h50;
+    parameter ADDR_BINDING_KEY_DATA   = 8'h54;
+    parameter ADDR_BINDING_KEY_CONTROL = 8'h58;
+    parameter ADDR_CERT_MAC_DATA      = 8'h5C;
+    parameter ADDR_CERT_CONTROL       = 8'h60;
+    parameter ADDR_CERT_STATUS        = 8'h64;
     parameter ADDR_CHIP_ID     = 8'hFC;
 
     reg [2:0] key_word_count;
     reg [2:0] hash_word_sel;
+    reg [2:0] binding_key_word_count;
+    reg [3:0] cert_mac_word_count;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -126,6 +145,14 @@ module kavach_register_map(
             prog_key_in_o        <= 0;
             key_word_count       <= 0;
             enroll_start_o       <= 0;
+            board_id_live_o        <= 0;
+            binding_key_in_o        <= 0;
+            binding_key_prog_en_o   <= 0;
+            binding_key_word_count  <= 0;
+            cert_mac_in_o            <= 0;
+            cert_program_en_o        <= 0;
+            cert_mac_word_count      <= 0;
+            verify_start_o           <= 0;
         end
         else begin
             reg_ready            <= 0;
@@ -136,6 +163,9 @@ module kavach_register_map(
             record_stage_o       <= 0; // Pulse
             prog_enable_o        <= 0; // Pulse
             enroll_start_o       <= 0; // Pulse
+            binding_key_prog_en_o <= 0; // Pulse
+            cert_program_en_o     <= 0; // Pulse
+            verify_start_o        <= 0; // Pulse
 
             if (reg_write) begin
                 reg_ready <= 1;
@@ -159,6 +189,28 @@ module kavach_register_map(
                     ADDR_KEY_CONTROL: begin
                         prog_enable_o  <= reg_wdata[0] & (key_word_count == 3'd4);
                         key_word_count <= 3'd0;
+                    end
+                    ADDR_BOARD_ID: board_id_live_o <= reg_wdata;
+                    ADDR_BINDING_KEY_DATA: begin
+                        binding_key_in_o <= {binding_key_in_o[95:0], reg_wdata};
+                        if (binding_key_word_count < 3'd4)
+                            binding_key_word_count <= binding_key_word_count + 1'b1;
+                    end
+                    ADDR_BINDING_KEY_CONTROL: begin
+                        binding_key_prog_en_o  <= reg_wdata[0] & (binding_key_word_count == 3'd4);
+                        binding_key_word_count <= 3'd0;
+                    end
+                    ADDR_CERT_MAC_DATA: begin
+                        cert_mac_in_o <= {cert_mac_in_o[223:0], reg_wdata};
+                        if (cert_mac_word_count < 4'd8)
+                            cert_mac_word_count <= cert_mac_word_count + 1'b1;
+                    end
+                    ADDR_CERT_CONTROL: begin
+                        // programming only fires once all 8 MAC words are loaded,
+                        // same safety pattern as ADDR_KEY_CONTROL above
+                        cert_program_en_o  <= reg_wdata[0] & (cert_mac_word_count == 4'd8);
+                        verify_start_o     <= reg_wdata[1];
+                        cert_mac_word_count <= 4'd0;
                     end
                     default: ;
                 endcase
@@ -189,6 +241,11 @@ module kavach_register_map(
                     ADDR_KEY_STATUS: reg_rdata <= {27'b0, key_word_count, key_locked_i};
                     ADDR_RELIABILITY_MASK: reg_rdata <= reliability_mask_i;
                     ADDR_MASK_STATUS: reg_rdata <= {30'b0, enroll_busy_i, mask_locked_i};
+                    ADDR_CERT_STATUS: reg_rdata <= {28'b0,
+                                    verify_busy_i,
+                                    binding_valid_i,
+                                    cert_programmed_i,
+                                    1'b0};
                     ADDR_CHIP_ID:   reg_rdata <= 32'h4B415641; // "KAVA" hex
                     default:        reg_rdata <= 32'h0;
                 endcase

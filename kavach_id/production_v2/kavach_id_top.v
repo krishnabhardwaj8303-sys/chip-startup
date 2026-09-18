@@ -122,7 +122,7 @@ module kavach_id_top(
             sequence_violation_i <= 1'b1;
     end
 
-    wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i & ~tamper_auth_block;
+    wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i & ~tamper_auth_block & binding_valid_w;
     wire budget_denial_this_cycle = auth_grant_raw & ~verify_allowed_i;
 
     always @(posedge int_clk or posedge rst_sync) begin
@@ -162,6 +162,79 @@ module kavach_id_top(
         .key_locked(key_locked_w)
     );
 
+    // ── LAYER 1: BINDING-CERTIFICATE KEY STORAGE ──
+    // Separate secret-key domain from the main chip_key above, so a leak
+    // of one does not compromise the other.
+    wire         binding_key_prog_en_w;
+    wire [127:0] binding_key_in_w;
+    wire         binding_key_locked_w;
+    wire [127:0] binding_key_w;
+
+    key_storage BINDING_KEY_STORE (
+        .clk(int_clk), .rst(rst_sync),
+        .prog_enable(binding_key_prog_en_w),
+        .prog_key_in(binding_key_in_w),
+        .chip_key(binding_key_w),
+        .key_locked(binding_key_locked_w)
+    );
+
+    // ── LAYER 1: BINDING-CERTIFICATE CONTROLLER ──
+    wire [31:0]  board_id_live_w;
+    wire [255:0] cert_mac_in_w;
+    wire         cert_program_en_w;
+    wire         verify_start_w;
+    wire         cert_programmed_w;
+    wire         binding_valid_w;
+    wire         verify_busy_w;
+
+    wire         bcert_sha_start;
+    wire [511:0] bcert_sha_block;
+    wire [255:0] bcert_sha_hash;
+    wire         bcert_sha_done;
+
+    // Chip identity for binding purposes must be FIXED once, at
+    // provisioning time -- independent of whatever challenge is active
+    // at runtime auth (stable_response_i changes per challenge). Latch
+    // it once, on the same pulse that programs the certificate, and use
+    // ONLY this latched value for every future binding verification.
+    reg  [31:0] puf_identity_id;
+    reg          puf_identity_captured;
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync) begin
+            puf_identity_id       <= 32'h0;
+            puf_identity_captured <= 1'b0;
+        end else if (cert_program_en_w && !puf_identity_captured) begin
+            puf_identity_id       <= stable_response_i;
+            puf_identity_captured <= 1'b1;
+        end
+    end
+
+    binding_cert_ctrl BINDINGCERT (
+        .clk(int_clk), .rst(rst_sync),
+        .cert_program_en(cert_program_en_w),
+        .cert_program_board_id(board_id_live_w),
+        .cert_program_mac(cert_mac_in_w),
+        .verify_start(verify_start_w),
+        .board_id_live(board_id_live_w),
+        .puf_id(puf_identity_id),
+        .binding_secret_key(binding_key_w),
+        .sha_start(bcert_sha_start),
+        .sha_block_in(bcert_sha_block),
+        .sha_hash_out(bcert_sha_hash),
+        .sha_done(bcert_sha_done),
+        .binding_valid(binding_valid_w),
+        .verify_busy(verify_busy_w),
+        .cert_programmed(cert_programmed_w)
+    );
+
+    sha256_core BINDING_SHA (
+        .clk(int_clk), .rst(rst_sync),
+        .start(bcert_sha_start),
+        .block_in(bcert_sha_block),
+        .hash_out(bcert_sha_hash),
+        .done(bcert_sha_done)
+    );
+
     kavach_register_map REGMAP (
         .clk(int_clk), .rst(rst_sync),
         .reg_write(reg_write), .reg_read(reg_read),
@@ -196,7 +269,17 @@ module kavach_id_top(
         .enroll_start_o(enroll_start_o),
         .enroll_busy_i(enroll_busy_w),
         .mask_locked_i(mask_locked_w),
-        .reliability_mask_i(reliability_mask_w)
+        .reliability_mask_i(reliability_mask_w),
+
+        .board_id_live_o(board_id_live_w),
+        .binding_key_in_o(binding_key_in_w),
+        .binding_key_prog_en_o(binding_key_prog_en_w),
+        .cert_mac_in_o(cert_mac_in_w),
+        .cert_program_en_o(cert_program_en_w),
+        .verify_start_o(verify_start_w),
+        .cert_programmed_i(cert_programmed_w),
+        .binding_valid_i(binding_valid_w),
+        .verify_busy_i(verify_busy_w)
     );
 
     // ═══════════════════════════════════════════
