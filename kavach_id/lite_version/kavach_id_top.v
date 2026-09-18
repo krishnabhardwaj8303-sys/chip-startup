@@ -1,0 +1,423 @@
+module kavach_id_top(
+    input  wire         clk,
+    input  wire         rst,
+    input  wire         clk_sel,
+
+    input  wire         uart_rx_in,
+    output wire         uart_tx_out,
+
+    output wire          chip_healthy,
+    output wire          verification_blocked
+);
+
+    wire osc_clk;
+    ring_oscillator OSC (
+        .enable(1'b1),
+        .clk_out(osc_clk)
+    );
+    wire int_clk = clk_sel ? osc_clk : clk;
+
+    wire por_reset;
+    por_circuit POR (
+        .clk(int_clk),
+        .por_reset(por_reset)
+    );
+    wire combined_rst = rst | por_reset;
+
+    wire rst_sync;
+    reset_sync RESET_SYNC (
+        .clk(int_clk),
+        .rst_in(combined_rst),
+        .rst_out(rst_sync)
+    );
+
+    // ═══════════════════════════════════════════
+    // 0. UART-TO-REGISTER BRIDGE
+    // ═══════════════════════════════════════════
+    wire         reg_write, reg_read;
+    wire [7:0]   reg_addr;
+    wire [31:0]  reg_wdata;
+    wire [31:0]  reg_rdata;
+    wire         reg_ready;
+
+    uart_to_reg_bridge BRIDGE (
+        .clk(int_clk), .rst(rst_sync),
+        .uart_rx_in(uart_rx_in),
+        .uart_tx_out(uart_tx_out),
+        .reg_write(reg_write), .reg_read(reg_read),
+        .reg_addr(reg_addr), .reg_wdata(reg_wdata),
+        .reg_rdata(reg_rdata), .reg_ready(reg_ready)
+    );
+
+    // ═══════════════════════════════════════════
+    // 1. REGISTER MAP
+    // ═══════════════════════════════════════════
+    wire         bist_start_o, stabilizer_start_o, auth_request_o;
+    reg          auth_request_prev;
+    wire         auth_request_pulse;
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync) auth_request_prev <= 0;
+        else          auth_request_prev <= auth_request_o;
+    end
+    assign auth_request_pulse = auth_request_o & ~auth_request_prev;
+    wire         sync_complete_o, record_stage_o;
+    wire [1:0]   stage_id_o;
+    wire [31:0]  challenge_o, stage_data_o;
+    wire         bist_pass_raw, bist_fail_raw, replay_detected_i;
+    wire [31:0]  stable_response_i;
+    wire [5:0]   unstable_bit_count_i;
+    wire         auth_grant_raw, auth_denied_bist_raw, auth_denied_replay_raw;
+    wire         sequence_violation_raw, chain_complete_i;
+    wire [31:0] chain_hash_w;
+    reg          sequence_violation_i;
+    wire [3:0]   stages_completed_i;
+    wire [7:0]   offline_budget_i;
+    wire         sync_required_i, verify_allowed_i;
+    wire [15:0]  total_offline_uses_i;
+
+    // ── NEW: PUF reliability-mask enrollment ──
+    wire         enroll_start_o;
+    wire         enroll_busy_w, enroll_done_w, mask_locked_w;
+    wire [31:0]  reliability_mask_w;
+
+    // ── STICKY STATUS LATCHES ──
+    reg bist_pass_i, bist_fail_i;
+    reg authentication_grant_i, auth_denied_bist_i, auth_denied_replay_i;
+    reg auth_denied_budget_i;
+
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync) begin
+            bist_pass_i <= 0;
+            bist_fail_i <= 0;
+        end
+        else begin
+            if (bist_start_o) begin
+                bist_pass_i <= 0;
+                bist_fail_i <= 0;
+            end
+            else begin
+                if (bist_pass_raw) bist_pass_i <= 1;
+                if (bist_fail_raw) bist_fail_i <= 1;
+            end
+        end
+    end
+
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync)
+            sequence_violation_i <= 1'b0;
+        else if (record_stage_o)
+            sequence_violation_i <= 1'b0;
+        else if (sequence_violation_raw)
+            sequence_violation_i <= 1'b1;
+    end
+
+    wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i;
+    wire budget_denial_this_cycle = auth_grant_raw & ~verify_allowed_i;
+
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync) begin
+            authentication_grant_i <= 0;
+            auth_denied_bist_i     <= 0;
+            auth_denied_replay_i   <= 0;
+            auth_denied_budget_i   <= 0;
+        end
+        else begin
+            if (auth_request_pulse) begin
+                authentication_grant_i <= 0;
+                auth_denied_bist_i     <= 0;
+                auth_denied_replay_i   <= 0;
+                auth_denied_budget_i   <= 0;
+            end
+            else begin
+                if (final_grant_this_cycle)     authentication_grant_i <= 1;
+                if (auth_denied_bist_raw)       auth_denied_bist_i     <= 1;
+                if (auth_denied_replay_raw)     auth_denied_replay_i   <= 1;
+                if (budget_denial_this_cycle)   auth_denied_budget_i   <= 1;
+            end
+        end
+    end
+
+    // ── PER-CHIP KEY STORAGE ──
+    wire         prog_enable_w;
+    wire [127:0] prog_key_in_w;
+    wire         key_locked_w;
+    wire [127:0] chip_key_w;
+
+    key_storage KEYSTORE (
+        .clk(int_clk), .rst(rst_sync),
+        .prog_enable(prog_enable_w),
+        .prog_key_in(prog_key_in_w),
+        .chip_key(chip_key_w),
+        .key_locked(key_locked_w)
+    );
+
+    kavach_register_map REGMAP (
+        .clk(int_clk), .rst(rst_sync),
+        .reg_write(reg_write), .reg_read(reg_read),
+        .reg_addr(reg_addr), .reg_wdata(reg_wdata),
+        .reg_rdata(reg_rdata), .reg_ready(reg_ready),
+        .bist_pass_i(bist_pass_i), .bist_fail_i(bist_fail_i),
+        .replay_detected_i(replay_detected_i),
+        .stable_response_i(stable_response_i),
+        .unstable_bit_count_i(unstable_bit_count_i),
+        .authentication_grant_i(authentication_grant_i),
+        .auth_denied_bist_i(auth_denied_bist_i),
+        .auth_denied_replay_i(auth_denied_replay_i),
+        .sequence_violation_i(sequence_violation_i),
+        .chain_complete_i(chain_complete_i),
+        .stages_completed_i(stages_completed_i),
+        .offline_budget_i(offline_budget_i),
+        .chain_hash_i(chain_hash_w),
+        .sync_required_i(sync_required_i),
+        .total_offline_uses_i(total_offline_uses_i),
+        .bist_start_o(bist_start_o),
+        .stabilizer_start_o(stabilizer_start_o),
+        .challenge_o(challenge_o),
+        .auth_request_o(auth_request_o),
+        .sync_complete_o(sync_complete_o),
+        .record_stage_o(record_stage_o),
+        .stage_id_o(stage_id_o),
+        .stage_data_o(stage_data_o),
+        .key_locked_i(key_locked_w),
+        .prog_enable_o(prog_enable_w),
+        .prog_key_in_o(prog_key_in_w),
+        .ciphertext_i(ciphertext_out),
+        .tx_counter_i(tx_msg_counter_out),
+        .enroll_start_o(enroll_start_o),
+        .enroll_busy_i(enroll_busy_w),
+        .mask_locked_i(mask_locked_w),
+        .reliability_mask_i(reliability_mask_w)
+    );
+
+    // ═══════════════════════════════════════════
+    // 2. REPLAY DETECTOR
+    // ═══════════════════════════════════════════
+    wire challenge_ready;
+    assign challenge_ready = stabilizer_start_o;
+
+    replay_detector REPLAY (
+        .clk(int_clk), .rst(rst_sync),
+        .challenge_ready(challenge_ready),
+        .challenge_in(challenge_o),
+        .replay_detected(replay_detected_i),
+        .last_challenge(),
+        .history_hit_count()
+    );
+
+    // ═══════════════════════════════════════════
+    // 3. PUF ARRAY + RESAMPLE CONTROLLER
+    // FIX: extended to also drive PUF reads during reliability-mask
+    // enrollment (see section 4b below). enroll_active (aliased
+    // directly to puf_reliability_enroll's own enroll_busy output, no
+    // duplicate state) takes priority over the normal
+    // stabilizer_start_o-driven auth path in RS_IDLE, and during
+    // enrollment the PUF challenge input is switched to a FIXED
+    // reference challenge (ENROLL_REF_CHALLENGE) instead of the
+    // host-supplied challenge_o, so every enrollment round reads the
+    // SAME challenge (required - the whole point is to see whether
+    // the SAME challenge's response is consistent across rounds).
+    // Enrollment does not touch stabilizer_start_o/replay_detector at
+    // all, so it cannot interfere with or be interfered with by the
+    // normal authentication flow.
+    // ═══════════════════════════════════════════
+    localparam [31:0] ENROLL_REF_CHALLENGE = 32'hE4B0110D;
+
+    wire        enroll_active = enroll_busy_w;
+    wire [31:0] puf_response;
+    reg         puf_pulse;
+    reg  [31:0] puf_sample_1, puf_sample_2, puf_sample_3;
+    reg         puf_samples_ready;
+    reg  [3:0]  rs_state;
+
+    localparam RS_IDLE = 4'd0, RS_P1 = 4'd1, RS_G1 = 4'd2, RS_C1 = 4'd3,
+               RS_P2   = 4'd4, RS_G2 = 4'd5, RS_C2 = 4'd6,
+               RS_P3   = 4'd7, RS_G3 = 4'd8, RS_C3 = 4'd9;
+
+    puf_array PUF (
+        .clk(int_clk), .rst(rst_sync),
+        .pulse_in(puf_pulse),
+        .challenge(enroll_active ? ENROLL_REF_CHALLENGE : challenge_o),
+        .response(puf_response)
+    );
+
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync) begin
+            rs_state          <= RS_IDLE;
+            puf_pulse         <= 1'b0;
+            puf_sample_1      <= 32'd0;
+            puf_sample_2      <= 32'd0;
+            puf_sample_3      <= 32'd0;
+            puf_samples_ready <= 1'b0;
+        end
+        else begin
+            puf_samples_ready <= 1'b0;
+            case (rs_state)
+                RS_IDLE: begin
+                    if (enroll_active) begin
+                        puf_pulse <= 1'b1;
+                        rs_state  <= RS_P1;
+                    end
+                    else if (stabilizer_start_o & ~replay_detected_i) begin
+                        puf_pulse <= 1'b1;
+                        rs_state  <= RS_P1;
+                    end
+                end
+                RS_P1: begin puf_pulse <= 1'b0; rs_state <= RS_G1; end
+                RS_G1: begin rs_state <= RS_C1; end
+                RS_C1: begin puf_sample_1 <= puf_response; puf_pulse <= 1'b1; rs_state <= RS_P2; end
+                RS_P2: begin puf_pulse <= 1'b0; rs_state <= RS_G2; end
+                RS_G2: begin rs_state <= RS_C2; end
+                RS_C2: begin puf_sample_2 <= puf_response; puf_pulse <= 1'b1; rs_state <= RS_P3; end
+                RS_P3: begin puf_pulse <= 1'b0; rs_state <= RS_G3; end
+                RS_G3: begin rs_state <= RS_C3; end
+                RS_C3: begin
+                    puf_sample_3      <= puf_response;
+                    puf_samples_ready <= 1'b1;
+                    rs_state          <= RS_IDLE;
+                end
+                default: rs_state <= RS_IDLE;
+            endcase
+        end
+    end
+
+    // ═══════════════════════════════════════════
+    // 4. PUF STABILIZER
+    // ═══════════════════════════════════════════
+    wire stable_done;
+
+    puf_stabilizer STAB (
+        .clk(int_clk), .rst(rst_sync),
+        .start(puf_samples_ready),
+        .raw_response_1(puf_sample_1),
+        .raw_response_2(puf_sample_2),
+        .raw_response_3(puf_sample_3),
+        .stable_response(stable_response_i),
+        .unstable_bit_mask(),
+        .stable_done(stable_done),
+        .unstable_bit_count(unstable_bit_count_i)
+    );
+
+    // ═══════════════════════════════════════════
+    // 4b. PUF RELIABILITY-MASK ENROLLMENT (NEW)
+    // Consumes each stabilized read produced during enrollment
+    // (gated by enroll_active, so normal-flow stable_done pulses are
+    // correctly ignored). See puf_reliability_enroll.v for the full
+    // design rationale and puf_stabilizer.v for the cross-read-attempt
+    // instability this addresses.
+    // ═══════════════════════════════════════════
+    wire enroll_stable_valid = stable_done & enroll_active;
+
+    puf_reliability_enroll #(.ENROLL_ROUNDS(4'd8)) RELMASK (
+        .clk(int_clk), .rst(rst_sync),
+        .enroll_start(enroll_start_o),
+        .stable_sample_valid(enroll_stable_valid),
+        .stable_sample(stable_response_i),
+        .enroll_busy(enroll_busy_w),
+        .enroll_done(enroll_done_w),
+        .reliability_mask(reliability_mask_w),
+        .mask_locked(mask_locked_w)
+    );
+
+    // ═══════════════════════════════════════════
+    // 5. SCRAMBLER
+    // FIX: raw_response now receives the RELIABILITY-MASKED stabilized
+    // response (chronically-unstable bits forced to 0) instead of the
+    // raw stable_response_i, so authentication is not affected by
+    // near-tie bits that vary across separate read-attempts. Before
+    // enrollment (or on a chip that is never enrolled), reliability_mask_w
+    // is 0 and this is a no-op - fully backward compatible.
+    // ═══════════════════════════════════════════
+    wire [31:0] masked_stable_response = stable_response_i & ~reliability_mask_w;
+    wire [31:0] scrambled_response;
+
+    scrambler SCRAM (
+        .challenge(challenge_o),
+        .raw_response(masked_stable_response),
+        .scrambled_response(scrambled_response)
+    );
+
+    // ═══════════════════════════════════════════
+    // 6. BIST
+    // ═══════════════════════════════════════════
+    wire bist_done_unused;
+
+    kavach_bist BIST (
+        .clk(int_clk), .rst(rst_sync),
+        .start_bist(bist_start_o),
+        .bist_pass(bist_pass_raw),
+        .bist_fail(bist_fail_raw),
+        .bist_done(bist_done_unused),
+        .test_response(32'hCAFEBABE)
+    );
+
+    // ═══════════════════════════════════════════
+    // 7. AUTHENTICATION GATE
+    // ═══════════════════════════════════════════
+    kavach_auth_gate AUTHGATE (
+        .clk(int_clk), .rst(rst_sync),
+        .auth_request(auth_request_pulse),
+        .bist_fail(bist_fail_i),
+        .bist_pass(bist_pass_i),
+        .replay_detected(replay_detected_i),
+        .authentication_grant(auth_grant_raw),
+        .auth_denied_bist(auth_denied_bist_raw),
+        .auth_denied_replay(auth_denied_replay_raw)
+    );
+
+    // ═══════════════════════════════════════════
+    // 8. OFFLINE VERIFICATION BUDGET
+    // ═══════════════════════════════════════════
+    offline_verify_counter OFFLINE (
+        .clk(int_clk), .rst(rst_sync),
+        .verify_request(auth_request_pulse),
+        .sync_complete(sync_complete_o),
+        .offline_budget(offline_budget_i),
+        .verify_allowed(verify_allowed_i),
+        .sync_required(sync_required_i),
+        .total_offline_uses(total_offline_uses_i)
+    );
+
+    // ═══════════════════════════════════════════
+    // 9. SUPPLY-CHAIN PROVENANCE CHAIN
+    // ═══════════════════════════════════════════
+    provenance_chain PROVENANCE (
+        .clk(int_clk), .rst(rst_sync),
+        .record_stage(record_stage_o),
+        .stage_id(stage_id_o),
+        .stage_data(stage_data_o),
+        .chain_hash(chain_hash_w),
+        .stages_completed(stages_completed_i),
+        .sequence_violation(sequence_violation_raw),
+        .chain_complete(chain_complete_i)
+    );
+
+    // ═══════════════════════════════════════════
+    // 10. ENCRYPTED CHANNEL
+    // ═══════════════════════════════════════════
+    wire [31:0] ciphertext_out;
+    wire        encrypt_done;
+    wire [15:0] session_nonce_unused, tx_msg_counter_out;
+
+    encrypted_channel ENC (
+        .clk(int_clk), .rst(rst_sync),
+        .shared_key(chip_key_w[31:0]),
+        .new_session(stabilizer_start_o),
+        .plaintext_in(scrambled_response),
+        .encrypt_start(stable_done & authentication_grant_i),
+        .ciphertext_out(ciphertext_out),
+        .encrypt_done(encrypt_done),
+        .ciphertext_in(32'h0),
+        .decrypt_start(1'b0),
+        .plaintext_out(),
+        .decrypt_done(),
+        .session_nonce_out(session_nonce_unused),
+        .msg_counter_out(tx_msg_counter_out)
+    );
+
+    // ═══════════════════════════════════════════
+    // TOP-LEVEL STATUS
+    // ═══════════════════════════════════════════
+    assign chip_healthy         = bist_pass_i & ~bist_fail_i;
+    assign verification_blocked = auth_denied_bist_i | auth_denied_replay_i | auth_denied_budget_i;
+
+endmodule

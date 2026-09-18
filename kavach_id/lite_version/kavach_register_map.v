@@ -25,8 +25,7 @@ module kavach_register_map(
     input  wire [7:0]   offline_budget_i,
     input  wire         sync_required_i,
     input  wire [15:0]  total_offline_uses_i,
-    input  wire [255:0] chain_hash_i,
-    input  wire         hash_busy_i,
+    input  wire [31:0]  chain_hash_i,
 
     output reg          bist_start_o,
     output reg          stabilizer_start_o,
@@ -126,6 +125,7 @@ module kavach_register_map(
             prog_key_in_o        <= 0;
             key_word_count       <= 0;
             enroll_start_o       <= 0;
+            hash_word_sel        <= 0;
         end
         else begin
             reg_ready            <= 0;
@@ -160,6 +160,7 @@ module kavach_register_map(
                         prog_enable_o  <= reg_wdata[0] & (key_word_count == 3'd4);
                         key_word_count <= 3'd0;
                     end
+                    ADDR_HASH_SELECT: hash_word_sel <= reg_wdata[2:0];
                     default: ;
                 endcase
             end
@@ -190,6 +191,7 @@ module kavach_register_map(
                     ADDR_RELIABILITY_MASK: reg_rdata <= reliability_mask_i;
                     ADDR_MASK_STATUS: reg_rdata <= {30'b0, enroll_busy_i, mask_locked_i};
                     ADDR_CHIP_ID:   reg_rdata <= 32'h4B415641; // "KAVA" hex
+                    ADDR_HASH_WORD: reg_rdata <= chain_hash_i;
                     default:        reg_rdata <= 32'h0;
                 endcase
             end
