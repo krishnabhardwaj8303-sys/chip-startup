@@ -6,6 +6,8 @@ module kavach_id_top(
     input  wire         uart_rx_in,
     output wire         uart_tx_out,
 
+    input  wire         pcb_loop_sense_i,
+
     output wire          chip_healthy,
     output wire          verification_blocked
 );
@@ -29,6 +31,16 @@ module kavach_id_top(
         .clk(int_clk),
         .rst_in(combined_rst),
         .rst_out(rst_sync)
+    );
+
+    wire tamper_auth_block;
+    wire tamper_fuse_tripped;
+    tamper_fuse_ctrl #(.DEBOUNCE_CYCLES(4)) TAMPERFUSE (
+        .clk                (int_clk),
+        .rst_n              (~rst_sync),
+        .continuity_loop_ok (pcb_loop_sense_i),
+        .tamper_fuse_tripped(tamper_fuse_tripped),
+        .auth_block         (tamper_auth_block)
     );
 
     // ═══════════════════════════════════════════
@@ -110,7 +122,7 @@ module kavach_id_top(
             sequence_violation_i <= 1'b1;
     end
 
-    wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i;
+    wire final_grant_this_cycle = auth_grant_raw & verify_allowed_i & ~tamper_auth_block;
     wire budget_denial_this_cycle = auth_grant_raw & ~verify_allowed_i;
 
     always @(posedge int_clk or posedge rst_sync) begin

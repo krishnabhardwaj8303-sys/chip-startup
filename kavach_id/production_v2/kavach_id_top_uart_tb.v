@@ -31,6 +31,7 @@ module kavach_id_top_uart_tb;
         .clk(clk), .clk_sel(1'b0), .rst(rst),
         .uart_rx_in(uart_link),
         .uart_tx_out(uart_from_chip),
+        .pcb_loop_sense_i(1'b1),
         .chip_healthy(chip_healthy),
         .verification_blocked(verification_blocked)
     );
@@ -139,7 +140,30 @@ module kavach_id_top_uart_tb;
             $display("FAIL: unexpected zero ciphertext");
 
         $display("================================================");
-        $display("UART-protocol top-level integration test complete");
+        $display("--- Test 5: Tamper-fuse -- break PCB loop, then attempt auth -- must be denied ---");
+    force DUT.pcb_loop_sense_i = 1'b0;
+    repeat (10) @(posedge clk);
+    release DUT.pcb_loop_sense_i;
+    // even though the physical wire is released back to 1, the internal
+    // fuse inside tamper_fuse_ctrl must now be permanently latched.
+    if (DUT.tamper_fuse_tripped !== 1'b1)
+        $display("FAIL: tamper_fuse_tripped did not latch after simulated desoldering");
+    else
+        $display("PASS: tamper_fuse_tripped latched after simulated desoldering");
+
+    // Try a fresh, otherwise-completely-legitimate authentication attempt
+    // post-tamper (same real sequence as Test 2) -- must still be denied.
+    reg_write_uart(8'h08, 32'h1111_1111); // CHALLENGE
+    reg_write_uart(8'h00, 32'h0000_0002); // CONTROL[1] = stabilizer_start
+    repeat (15) @(posedge clk);
+    reg_write_uart(8'h00, 32'h0000_0004); // CONTROL[2] = auth_request
+    repeat (30) @(posedge clk);
+    if (DUT.authentication_grant_i === 1'b1)
+        $display("FAIL: authentication_grant asserted on a TAMPERED chip -- SECURITY BUG");
+    else
+        $display("PASS: authentication correctly denied after tamper-fuse trip, even with a valid PUF/challenge");
+
+    $display("UART-protocol top-level integration test complete");
         $display("================================================");
         $finish;
     end

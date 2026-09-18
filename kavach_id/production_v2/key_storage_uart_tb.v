@@ -29,6 +29,7 @@ module key_storage_uart_tb;
         .clk(clk), .clk_sel(1'b0), .rst(rst),
         .uart_rx_in(uart_link),
         .uart_tx_out(uart_from_chip),
+        .pcb_loop_sense_i(1'b1),
         .chip_healthy(chip_healthy),
         .verification_blocked(verification_blocked)
     );
