@@ -60,7 +60,16 @@ module kavach_register_map(
     output reg           verify_start_o,
     input  wire          cert_programmed_i,
     input  wire          binding_valid_i,
-    input  wire          verify_busy_i
+    input  wire          verify_busy_i,
+
+    // ── NEW: Layer 3 board-side serial ID (plain asset tag, NOT crypto-bound;
+    //         independent of Layer 1's board_id_live which IS crypto-bound.
+    //         Board manufacturer writes this once at their own assembly step
+    //         for their own inventory tracking -- separate from chip-cert
+    //         provisioning, which is why it's a separate write-once field.) ──
+    output reg  [31:0]  board_serial_id_o,
+    output reg           board_serial_lock_o,
+    input  wire           board_serial_locked_i
 );
     // ── REGISTER MAP ──
     // 0x00: CONTROL (write) - bit0=bist_start, bit1=stabilizer_start,
@@ -122,6 +131,8 @@ module kavach_register_map(
     parameter ADDR_CERT_MAC_DATA      = 8'h5C;
     parameter ADDR_CERT_CONTROL       = 8'h60;
     parameter ADDR_CERT_STATUS        = 8'h64;
+    parameter ADDR_BOARD_SERIAL_ID    = 8'h68;
+    parameter ADDR_BOARD_SERIAL_LOCK  = 8'h6C;
     parameter ADDR_CHIP_ID     = 8'hFC;
 
     reg [2:0] key_word_count;
@@ -153,6 +164,8 @@ module kavach_register_map(
             cert_program_en_o        <= 0;
             cert_mac_word_count      <= 0;
             verify_start_o           <= 0;
+            board_serial_id_o        <= 0;
+            board_serial_lock_o      <= 0;
         end
         else begin
             reg_ready            <= 0;
@@ -166,6 +179,7 @@ module kavach_register_map(
             binding_key_prog_en_o <= 0; // Pulse
             cert_program_en_o     <= 0; // Pulse
             verify_start_o        <= 0; // Pulse
+            board_serial_lock_o   <= 0; // Pulse
 
             if (reg_write) begin
                 reg_ready <= 1;
@@ -212,6 +226,12 @@ module kavach_register_map(
                         verify_start_o     <= reg_wdata[1];
                         cert_mac_word_count <= 4'd0;
                     end
+                    ADDR_BOARD_SERIAL_ID: begin
+                        // only takes effect if not yet locked -- top-level
+                        // enforces the actual write-once latch
+                        board_serial_id_o <= reg_wdata;
+                    end
+                    ADDR_BOARD_SERIAL_LOCK: board_serial_lock_o <= reg_wdata[0];
                     default: ;
                 endcase
             end
@@ -246,6 +266,7 @@ module kavach_register_map(
                                     binding_valid_i,
                                     cert_programmed_i,
                                     1'b0};
+                    ADDR_BOARD_SERIAL_ID: reg_rdata <= {31'b0, board_serial_locked_i};
                     ADDR_CHIP_ID:   reg_rdata <= 32'h4B415641; // "KAVA" hex
                     default:        reg_rdata <= 32'h0;
                 endcase

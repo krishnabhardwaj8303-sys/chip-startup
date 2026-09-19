@@ -238,6 +238,26 @@ module kavach_id_top_uart_tb;
             $display("FAIL: unexpected zero ciphertext");
 
         $display("================================================");
+        $display("--- Test 7: Board-serial (Layer 3) write-once asset tag ---");
+        reg_write_uart(8'h68, 32'h5A5A_0001); // BOARD_SERIAL_ID: board manufacturer's own tag
+        reg_write_uart(8'h6C, 32'h0000_0001); // BOARD_SERIAL_LOCK: lock it in
+        repeat (30) @(posedge clk); // extra margin, matches other UART-write settle times elsewhere in this file
+        if (DUT.board_serial_locked_r && DUT.board_serial_stored == 32'h5A5A_0001)
+            $display("PASS: board serial locked with correct value = %h", DUT.board_serial_stored);
+        else
+            $display("FAIL: board serial not locked correctly (stored=%h, locked=%b)",
+                      DUT.board_serial_stored, DUT.board_serial_locked_r);
+
+        // Attempt to overwrite after lock -- must be ignored
+        reg_write_uart(8'h68, 32'hFFFF_FFFF);
+        reg_write_uart(8'h6C, 32'h0000_0001); // try to lock again too
+        repeat (30) @(posedge clk);
+        if (DUT.board_serial_stored == 32'h5A5A_0001)
+            $display("PASS: board serial write-once enforced, overwrite attempt ignored");
+        else
+            $display("FAIL: board serial was overwritten after lock -- write-once violated");
+
+        $display("================================================");
         $display("--- Test 6: Transplant attack -- genuine chip, WRONG board, NO physical tamper -- must be denied ---");
         reg_write_uart(8'h50, 32'hBAD0_BAD0); // ADDR_BOARD_ID: wrong board
         reg_write_uart(8'h08, 32'h1111_1111); // CHALLENGE

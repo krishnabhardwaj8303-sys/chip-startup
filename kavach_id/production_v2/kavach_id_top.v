@@ -235,6 +235,27 @@ module kavach_id_top(
         .done(bcert_sha_done)
     );
 
+    // ── LAYER 3: BOARD-SIDE SERIAL ID (plain asset tag, write-once) ──
+    // Independent of Layer 1's board_id_live (which IS crypto-bound into
+    // the manufacturer-signed certificate). This is a separate, simple
+    // write-once field for the BOARD manufacturer's own inventory
+    // tracking -- written at their own assembly step, not tied to the
+    // chip-cert provisioning secret-key process at all.
+    wire [31:0] board_serial_id_w;
+    wire        board_serial_lock_w;
+    reg  [31:0] board_serial_stored;
+    reg          board_serial_locked_r;
+
+    always @(posedge int_clk or posedge rst_sync) begin
+        if (rst_sync) begin
+            board_serial_stored   <= 32'h0;
+            board_serial_locked_r <= 1'b0;
+        end else if (board_serial_lock_w && !board_serial_locked_r) begin
+            board_serial_stored   <= board_serial_id_w;
+            board_serial_locked_r <= 1'b1;
+        end
+    end
+
     kavach_register_map REGMAP (
         .clk(int_clk), .rst(rst_sync),
         .reg_write(reg_write), .reg_read(reg_read),
@@ -279,7 +300,11 @@ module kavach_id_top(
         .verify_start_o(verify_start_w),
         .cert_programmed_i(cert_programmed_w),
         .binding_valid_i(binding_valid_w),
-        .verify_busy_i(verify_busy_w)
+        .verify_busy_i(verify_busy_w),
+
+        .board_serial_id_o(board_serial_id_w),
+        .board_serial_lock_o(board_serial_lock_w),
+        .board_serial_locked_i(board_serial_locked_r)
     );
 
     // ═══════════════════════════════════════════
